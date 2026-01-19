@@ -1,7 +1,7 @@
 import math, sys
-## Ce code ne prend en compte que les distances "à vol d'oiseau" entre les villes
-## Notre code doit prendre en compte en plus les distances réelles entre les villes
-## Pour ne pas inutilement calculer des itinéraires avec des villes lointaines, on doit réaliser 
+## On a pour l'instant qu'une solution de route entre les villes, mais on pourrait imaginer en avoir plusieurs (ex: par l'autoroute, par la nationale, par la départementale, etc.)
+## On doit rajouter le prix des péages
+
 graphe = {'Alès':{'Anduze':15, 'Nîmes':43, 'Montpellier':73},
           'Arles':{'Nîmes':36},
           'Anduze':{'Alès':15, 'Nîmes':44},
@@ -14,6 +14,7 @@ graphe = {'Alès':{'Anduze':15, 'Nîmes':43, 'Montpellier':73},
 géo = {'Alès': [44.1231, 4.0803], 'Anduze': [44.0538, 4.0427], 'Arles': [43.666672, 4.63333], 'Lodève': [43.7317, 3.3235], 'Montpellier':[43.610769, 3.876716], 'Nîmes':[43.8367, 4.3601], 'Sète': [43.4045, 3.6934]}
 
 # distance peenant en compte la courbure de la Terre
+# On retrie les voisines pour prioriser celles qui sont les plus proches de la ville d'arrivée
 def distance_orthodromique(lat1, lng1, lat2, lng2) :
     # angles en degrés
     lat1 *= math.pi / 180
@@ -28,7 +29,7 @@ def distance_orthodromique(lat1, lng1, lat2, lng2) :
 
 # mise en oeuvre de l'heuristique :
 # les voisines d'une ville vont être parcourues par la fonction récursive
-# dans l'ordre de leur proximité avec la ville d'arrivée
+# dans l'ordre de leur proximité avec la ville d'arrivée puisque déjà pré-ordonnées
 def triVillesParRapportVilleArrivée(voisines) :
     voisinestriées = []
     while len(voisines) > 0 :
@@ -54,9 +55,7 @@ def parcours(ville, villeA, chemin) :
     for voisine in graphe[ville] :
         if voisine not in chemin : # pour ne pas boucler dans le graphe
             print(f"Not in chemin {voisines}")
-            voisines.append([voisine,
-                distance_orthodromique(géo[voisine][0],géo[voisine][1],
-                                       géo[villeA][0],géo[villeA][1])])
+            voisines.append([voisine, distance_orthodromique(géo[voisine][0], géo[voisine][1], géo[villeA][0], géo[villeA][1])])
     voisinestriées = triVillesParRapportVilleArrivée(voisines)
     print(f"Triée {voisinestriées}")
     for voisine in voisinestriées :

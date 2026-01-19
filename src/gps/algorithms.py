@@ -1,8 +1,3 @@
-"""
-algorithms.py
-Implémentation des algorithmes de recherche de chemin.
+from data.map import maping
 
-Responsabilité :
-- Calculer le plus court chemin
-- Ne PAS stocker les données du graphe
-"""
+print(maping)
