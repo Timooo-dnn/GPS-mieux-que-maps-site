@@ -7,3 +7,4 @@ Faire un jeux d'essai avec des points pour vérifier qu'il choisit le chemin le 
 mais aussi sur le type de voie. C'est donc 2 tris à faire, un sur la distance et un sur le type de voie et donc la vitesse.
 On doit s'approprier le code de Dijkstra pour comparer au niveau de la distance sur le parcours. Notre algo démontrera alors si il y a des chemins.
 Groupe 1 sur import des données, Groupe 2 sur le tri des voisins, Groupe 3 sur l'algo de Dijkstra.
+test
