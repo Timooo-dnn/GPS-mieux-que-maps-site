@@ -64,9 +64,11 @@ print(trivoisines(voisines_test))'''
 # 1. Fonction permettant de trier les villles dans la liste ville départ par rapport distance orthodromique
 # 2. Fonction permettant de connaitre la ville suivante la plus proche de la ville d'arrivée si destination pas dans voisines directes
 # 3. Calcul de la distance en fonction du parcours obtenu
+
+## Trouver les 3 chemins les plus courts en distance orthodromique
 global dico
 dico={}
-def parcours_dist_orth(ville, villeA, chemin):
+def parcours_dist_orth(ville, villeA, chemin, tab_final):
     if villeA in maping[ville]:
         return chemin+[villeA]        
     voisines=[]
