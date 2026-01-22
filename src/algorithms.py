@@ -1,4 +1,3 @@
-##Importer les données d'entrées contenues sur les fichiers map.py et localisation.py
 from map import maping
 from localisation import localisation_ville
 import math
@@ -10,6 +9,22 @@ calcul du parcours avec + petite distance (distances réelles entre les villes)
 définition du temps de parcours en fonction de la vitesse moyenne des routes utilisées (distance, type de route)
 tri et appel calcul parcours avec + petit temps
 + possibilité calcul cout (péages, carburant, etc.)'''
+
+## Fonctionnement de l'algo:
+#1. Entrée utilisateur : ville de départ, ville d'arrivée
+#2. Vérification si ville d'arrivée dans les voisines directes de la ville de départ
+#3. Si non, trier les villes voisines en fonction de la distance orthodromique à la ville d'arrivée
+#4. Calcul des 3 chemins les plus courts en distance orthodromique et les sortirs sous le format:
+"""Chemin1[Toulouse, Colomiers, Tournefeuille, Aussonne]
+Chemin2[Toulouse, Blagnac, Aussonne]
+Chemin3[Toulouse, Colomiers, Aussonne]"""
+#5. Calcul de la distance réelle pour chaque chemin
+#6. Trie du plus court au plus long chemin en distance réelle 
+#7. Calcul du temps réelle pour chaque chemin (en prenant en compte la vitesse moyenne des routes entre chaque)
+#8. Trie du plus rapide au plus lent chemin en temps réelle
+#9. Affichage des résultats
+
+chemin_test = ['Toulouse', 'Blagnac', 'Aussonne']
 
 ## Calcul Othodromique entre 2 points
 def distance_orthodromique(lat1, lng1, lat2, lng2) :
@@ -72,9 +87,9 @@ print(dico)
 chemin_trouve=['Toulouse', 'Colomiers', 'Aussonne']
 def calculer_distance_reelle(chemin_trouve):
     distance_reelle_totale = 0
-    for i in range(len(chemin_trouve) - 1):
-        depart=chemin_trouve[i]
-        arrivee=chemin_trouve[i+1]
+    for i in range(len(chemin_test) - 1):
+        depart=chemin_test[i]
+        arrivee=chemin_test[i+1]
         distance_pair=maping[depart][arrivee]
         km=distance_pair[0]
         distance_reelle_totale += km
