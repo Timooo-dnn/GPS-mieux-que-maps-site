@@ -3,7 +3,6 @@ import folium
 import os
 
 # ================= CONFIGURATION =================
-# On s'assure que le chemin est EXACTEMENT le même que PATH_OUTPUT du premier script
 PATH_JSON = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\routes_haute_precision.json"
 OUTPUT_HTML = "ma_route_test.html"
 
@@ -18,13 +17,12 @@ def charger_donnees():
 def generer_carte(ville_depart, ville_arrivee, data):
     if data is None: return
 
-    # 1. Vérification de l'existence de la ville de départ
+    # Vérification de l'existence de la ville de départ
     if ville_depart not in data:
         print(f"Erreur : La ville '{ville_depart}' n'est pas dans la base de données.")
         return
 
-    # 2. Recherche du trajet vers la ville d'arrivée
-    # On cherche dans la liste 'adjacents'
+    # Recherche du trajet vers la ville d'arrivée
     trajet = next((adj for adj in data[ville_depart]['adjacents'] if adj['nom'] == ville_arrivee), None)
     
     if not trajet:
@@ -36,21 +34,15 @@ def generer_carte(ville_depart, ville_arrivee, data):
             print(f"La ville {ville_depart} n'a aucun voisin enregistré.")
         return
 
-    # 3. Création de la carte
     coords_dep = data[ville_depart]['coords']
-    # Folium utilise [lat, lon], le centre de la carte est le départ
     m = folium.Map(location=[coords_dep['lat'], coords_dep['lon']], zoom_start=12)
 
-    # 4. Extraction et conversion de la géométrie
-    # Le JSON stocke [lon, lat], Folium nécessite [lat, lon]
     try:
-        # On utilise 'path_geometry' conformément au nouveau script de calcul
         points_route = [[p[1], p[0]] for p in trajet['path_geometry']]
     except KeyError:
         print("Erreur structurelle : La clé 'path_geometry' est absente du JSON.")
         return
 
-    # 5. Dessin de la route
     folium.PolyLine(
         points_route, 
         color="blue", 
@@ -60,15 +52,12 @@ def generer_carte(ville_depart, ville_arrivee, data):
                  f"Vitesse moy : {trajet['vitesse_moyenne_kmh']} km/h")
     ).add_to(m)
 
-    # 6. Ajout des marqueurs visuels
-    # Départ (Marqueur Vert)
     folium.Marker(
         [coords_dep['lat'], coords_dep['lon']], 
         popup=f"Départ : {ville_depart}", 
         icon=folium.Icon(color='green', icon='play')
     ).add_to(m)
 
-    # Arrivée (Marqueur Rouge) - On utilise le dernier point du tracé réel
     coords_arr_finale = points_route[-1]
     folium.Marker(
         coords_arr_finale, 
@@ -76,7 +65,6 @@ def generer_carte(ville_depart, ville_arrivee, data):
         icon=folium.Icon(color='red', icon='stop')
     ).add_to(m)
 
-    # 7. Sauvegarde
     m.save(OUTPUT_HTML)
     
     print("-" * 40)
@@ -91,7 +79,6 @@ if __name__ == "__main__":
     data_gps = charger_donnees()
     
     if data_gps:
-        # On demande les noms à l'utilisateur (attention à la casse et aux accents)
         v_dep = input("Ville de départ : ").strip()
         v_arr = input("Ville d'arrivée : ").strip()
         
