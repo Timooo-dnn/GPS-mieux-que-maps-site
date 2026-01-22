@@ -1,18 +1,3 @@
-"""
-algorithms.py
-Implémentation des algorithmes de recherche de chemin.
-
-Responsabilité :
-- Calculer le plus court chemin
-- Ne PAS stocker les données du graphe
-
-{"Toulouse":{"Blagnac":[10,A], "Colomiers":[15, N],"Tournefeuille":[8, A]},
-"Blagnac":{"Toulouse":[10, A], "Aussonne":[9,D], "Colomiers":[7, V]},
-"Colomiers":{"Toulouse":[15, N], "Blagnac":[7, V],"Tournefeuille":[5,D], "Aussonne":[12,N]},
-"Tournefeuille":{"Toulouse":[8,A], "Colomiers":[5, D]},
-"Aussonne":{"Blagnac":[9,D], "Colomiers":[12, N]}
-}
-"""
 ##Importer les données d'entrées contenues sur les fichiers map.py et localisation.py
 from map import maping
 from localisation import localisation_ville
@@ -26,6 +11,7 @@ définition du temps de parcours en fonction de la vitesse moyenne des routes ut
 tri et appel calcul parcours avec + petit temps
 + possibilité calcul cout (péages, carburant, etc.)'''
 
+## Calcul Othodromique entre 2 points
 def distance_orthodromique(lat1, lng1, lat2, lng2) :
     # angles en degrés
     lat1 *= math.pi / 180
@@ -38,7 +24,7 @@ def distance_orthodromique(lat1, lng1, lat2, lng2) :
     elif v < -1: v = -1
     return (6371000 * math.acos(v)) / 1000
 
-#Définition de la fonction de tri ortho 
+## Tri des villes en fonction de la distance orthodromique
 def trivoisines(voisines):
     voisinestriées = []
     while len(voisines) > 0 :
@@ -59,15 +45,13 @@ def trivoisines(voisines):
 voisines_test=[['A', 10],['B', 23],['C', 2], ['D', 42]]
 print(trivoisines(voisines_test))'''
 
-## premier test pour voir le format de chemin
-# 1. Fonction permettant de trier les villles dans la liste ville départ par rapport distance orthodromique
-# 2. Fonction permettant de connaitre la ville suivante la plus proche de la ville d'arrivée si destination pas dans voisines directes
-# 3. Calcul de la distance en fonction du parcours obtenu
+global tab_final
 
-def parcours_dist_orth(ville, villeA, chemin, tab_final):
+tab_final=[]
+def parcours_dist_orth(ville, villeA, chemin):
     if villeA in maping[ville]:
         print(chemin)
-        return chemin+[villeA]         #[['Toulouse', 0], ['Blagnac', 10]]
+        return chemin+[villeA]        
     voisines=[]
     for voisine in maping[ville] :
         if voisine not in chemin :
@@ -75,33 +59,27 @@ def parcours_dist_orth(ville, villeA, chemin, tab_final):
         voisinestri=trivoisines(voisines)
         print(voisinestri)
     for voisine in voisinestri :
-        res = parcours_dist_orth(voisine, villeA, chemin+[voisine], tab_final)
-        if villeA in res : return(res) # un chemin a été trouvé : remontée du résultat
+        res = parcours_dist_orth(voisine, villeA, chemin+[voisine])
+        if villeA in res : 
+            tab_final.append(res)
+            return(res) # un chemin a été trouvé : remontée du résultat
     return []
 
 
-print(parcours_dist_orth('Toulouse', 'Aussonne', ['Toulouse'], ['sdvsvsv']))
-
+print(parcours_dist_orth('Toulouse', 'Aussonne', ['Toulouse']))
 
 chemin_trouve=['Toulouse', 'Colomiers', 'Aussonne']
 def calculer_distance_reelle(chemin_trouve):
-    """
-    Prend une liste de villes ex: ['Toulouse', 'Colomiers', 'Aussonne']
-    Et calcule la somme des distances réelles dans 'maping'.
-    """
-    distance_totale = 0
-    # On boucle de la première ville jusqu'à l'avant-dernière
-    # Si le chemin a 3 villes, on fait 2 trajets (0->1 et 1->2)
+    distance_reelle_totale = 0
     for i in range(len(chemin_trouve) - 1):
-        depart = chemin_trouve[i]
-        arrivee = chemin_trouve[i+1]
-        # On va chercher l'info dans le graphe
-        # Exemple: maping['Toulouse']['Colomiers'] donne [15, 'Nationale']
-        infos_arete = maping[depart][arrivee]
-        # La distance est le premier élément de la liste (index 0)
-        km = infos_arete[0]
-        #print(f"Trajet {depart} -> {arrivee} : {km} km ({infos_arete[1]})")
-        distance_totale += km
-    return distance_totale
+        depart=chemin_trouve[i]
+        arrivee=chemin_trouve[i+1]
+        distance_pair=maping[depart][arrivee]
+        km=distance_pair[0]
+        distance_reelle_totale += km
+    return distance_reelle_totale
 
-test
+'''
+cd /Users/antoinehardy/Downloads/Code/GPS-mieux-que-maps
+python3 -m src.map
+'''
