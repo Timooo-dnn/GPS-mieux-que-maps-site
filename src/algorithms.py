@@ -103,3 +103,5 @@ def calculer_distance_reelle(chemin_trouve):
         #print(f"Trajet {depart} -> {arrivee} : {km} km ({infos_arete[1]})")
         distance_totale += km
     return distance_totale
+
+test
