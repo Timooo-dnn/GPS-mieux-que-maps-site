@@ -3,7 +3,7 @@ import folium
 import os
 
 # ================= CONFIGURATION =================
-PATH_JSON = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\routes_haute_precision.json"
+PATH_JSON = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\routes_villes_adj.json"
 OUTPUT_HTML = "ma_route_test.html"
 
 def charger_donnees():
