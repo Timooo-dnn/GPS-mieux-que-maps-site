@@ -2,14 +2,6 @@ from map import maping
 from localisation import localisation_ville
 import math
 
-'''
-insertion des données
-tri orthodromique (prioriser les villes étant les plus proches de la ville d'arrivée)
-calcul du parcours avec + petite distance (distances réelles entre les villes)
-définition du temps de parcours en fonction de la vitesse moyenne des routes utilisées (distance, type de route)
-tri et appel calcul parcours avec + petit temps
-+ possibilité calcul cout (péages, carburant, etc.)'''
-
 ## Fonctionnement de l'algo:
 #1. Entrée utilisateur : ville de départ, ville d'arrivée
 #2. Vérification si ville d'arrivée dans les voisines directes de la ville de départ
@@ -96,4 +88,4 @@ def calculer_distance_reelle(chemin_trouve):
         km=distance_pair[0]
         distance_reelle_totale += km
     return distance_reelle_totale
-
+print(calculer_distance_reelle(chemin_trouve))

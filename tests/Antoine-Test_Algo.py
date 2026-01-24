@@ -1,5 +1,8 @@
-from map import maping
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from localisation import localisation_ville
+from map import maping
 import math
 
 '''
@@ -85,7 +88,6 @@ def parcours_dist_orth(ville, villeA, chemin):
 print(parcours_dist_orth('Toulouse', 'Aussonne', ['Toulouse']))
 print(dico)
 
-
 chemin_trouve=['Toulouse', 'Colomiers', 'Aussonne']
 def calculer_distance_reelle(chemin_trouve):
     distance_reelle_totale = 0
@@ -96,4 +98,3 @@ def calculer_distance_reelle(chemin_trouve):
         km=distance_pair[0]
         distance_reelle_totale += km
     return distance_reelle_totale
-
