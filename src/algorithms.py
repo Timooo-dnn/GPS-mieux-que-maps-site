@@ -117,4 +117,3 @@ def dico_temps(dico):
                 temps_res[i], temps_res[i+1]=temps_res[i+1], temps_res[i]
                 chemin_res[i], chemin_res[i+1]=chemin_res[i+1], chemin_res[i]
     return dico_res
-
