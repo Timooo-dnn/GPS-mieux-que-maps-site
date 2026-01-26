@@ -13,11 +13,14 @@ import math
 warnings.filterwarnings("ignore")
 
 # ================= CONFIGURATION DES PARAMETRES =================
-
 CHEMIN_ROUTES = r"src\data\gis_osm_roads_free_1.shp"
 VILLES_ADJACENTS = r"src\data\adjacences_villes.json"
 CHEMIN_COORDS = r"src\data\coords_villes.json"
 CHEMIN_SORTIE = r"src\data\routes_villes_adj.json"
+
+SIN_K = 1.5
+SIN_MIN = 0.4
+SIN_MAX = 1.0
 
 VITESSE_DEFAULT = {
     "motorway": 130, 
@@ -65,7 +68,7 @@ AUTOROUTES = ["motorway", "motorway_link"]
 
 # ================= FONCTIONS =================
 
-def vitesses(row):
+def vitesses(row): #Trouver vitesse associer
     try:
         s = float(row["maxspeed"])
         if s > 0: return s
@@ -73,8 +76,7 @@ def vitesses(row):
         pass
     return VITESSE_DEFAULT.get(row["fclass"], 50)
 
-
-def z_level(row):
+def z_level(row): #Association z level
     try:
         layer = int(row["layer"])
         if layer != 0: return layer
@@ -84,13 +86,41 @@ def z_level(row):
     contient_tunnel = row.get("tunnel", "F") in ["T", "True", True]
     return 1 if contient_bridge else (-1 if contient_tunnel else 0)
 
+def indice_sinuosite(geom):
+    try:
+        longueur = geom.length
+        start = Point(geom.coords[0])
+        end = Point(geom.coords[-1])
+        direct = start.distance(end)
+
+        if direct == 0:
+            return 1.0
+
+        return max(1.0, longueur / direct)
+    except:
+        return 1.0
+    
+def facteur_sinuosite(sinuosite, fclass):
+    if fclass in ["motorway", "motorway_link", "trunk"]:
+        return 1.0
+
+    facteur = math.exp(-SIN_K * (sinuosite - 1))
+    return max(SIN_MIN, min(SIN_MAX, facteur))
 
 def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de route en graph orienté avec distance et temps
     print("Préparation des arêtes")
     gdf_arretes = gdf_roads_projected.explode(index_parts=False).reset_index(drop=True)
     
     gdf_arretes["weight"] = gdf_arretes.geometry.length
-    gdf_arretes["speed_ms"] = gdf_arretes["final_speed"] / 3.6
+    print("Calcul sinuosité...")
+    gdf_arretes["sinuosite"] = gdf_arretes.geometry.apply(indice_sinuosite)
+
+    gdf_arretes["coef_sinuosite"] = gdf_arretes.apply(
+        lambda r: facteur_sinuosite(r["sinuosite"], r["fclass"]),
+        axis=1
+    )
+
+    gdf_arretes["speed_ms"] = (gdf_arretes["final_speed"] * gdf_arretes["coef_sinuosite"]) / 3.6
     gdf_arretes["time"] = np.where(gdf_arretes["speed_ms"] > 0, gdf_arretes["weight"] / gdf_arretes["speed_ms"], math.inf)
     
     gdf_arretes["u"] = gdf_arretes.geometry.apply(lambda g: g.coords[0])
