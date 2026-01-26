@@ -74,15 +74,16 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
     for voisine in voisinestri[:4] :
         res = parcours_dist_orth(voisine, villeA, chemin+[voisine], dico)
         if villeA in res:
-            i+=1
-            dico[i]=res
             liste.append(res)
-            if type(dico[i]) == list:
-                dico[12]=res
-    return(liste) # un chemin a été trouvé : remontée du résultat
-    return []
+            if len(dico)>1:
+                if type(dico[str(i)]) == list:
+                    dico[str(i+1)+'-bis']=res
+            else: 
+                dico[str(i)]=res
+            i+=1
+
+    return(dico) # un chemin a été trouvé : remontée du résultat
 print(parcours_dist_orth('Toulouse', 'Aussonne', ['Toulouse'], dico))
-print(dico)
 
 
 

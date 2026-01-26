@@ -65,7 +65,7 @@ def dijkstra(graph: Dict[str, List[Tuple[str, int]]],
                 heapq.heappush(pq, (nouvelle_distance, voisin))
    
     return distances, predecesseurs
-    print(pq)
+
 
 def reconstruire_chemin(predecesseurs: Dict[str, Optional[str]],
                         start: str,
@@ -115,22 +115,51 @@ if __name__ == "__main__":
     # Conversion du format dictionnaire vers liste de tuples
     graphe = {ville: list(voisins.items()) for ville, voisins in graphe_villes.items()}
    
-    depart = 'Alès'
-    arrivee = 'Sète'
-   
+    # Affichage des villes disponibles
+    print("=" * 50)
+    print("CALCUL DU PLUS COURT CHEMIN - ALGORITHME DE DIJKSTRA")
+    print("=" * 50)
+    print("\nVilles disponibles:")
+    for i, ville in enumerate(sorted(graphe.keys()), 1):
+        print(f"  {i}. {ville}")
+    
+    # Saisie de la ville de départ
+    print("\n" + "-" * 50)
+    while True:
+        depart = input("Entrez la ville de départ: ").strip()
+        if depart in graphe:
+            break
+        print(f"❌ '{depart}' n'existe pas. Veuillez choisir parmi les villes listées.")
+    
+    # Saisie de la ville d'arrivée
+    while True:
+        arrivee = input("Entrez la ville d'arrivée: ").strip()
+        if arrivee in graphe:
+            if arrivee != depart:
+                break
+            print("❌ La ville d'arrivée doit être différente de la ville de départ.")
+        else:
+            print(f"❌ '{arrivee}' n'existe pas. Veuillez choisir parmi les villes listées.")
+    
     # Exécution de l'algorithme
+    print("\n" + "=" * 50)
     distances, predecesseurs = dijkstra(graphe, depart, arrivee)
    
     # Affichage des résultats
-    print(f"Distances minimales depuis {depart}:")
-    for node, dist in distances.items():
-        print(f"  {node}: {dist}")
-   
-    print(f"\nPlus court chemin de {depart} à {arrivee}:")
+    print(f"\n📍 Plus court chemin de {depart} à {arrivee}:")
     chemin = reconstruire_chemin(predecesseurs, depart, arrivee)
     if chemin:
-        print(f"  {' -> '.join(chemin)}")
-        print(f"  Distance totale: {distances[arrivee]}")
+        print(f"  ➜ {' → '.join(chemin)}")
+        print(f"  📏 Distance totale: {distances[arrivee]} km")
     else:
-        print(f"  Aucun chemin trouvé")
+        print(f"  ❌ Aucun chemin trouvé")
     
+    print("\n" + "=" * 50)
+    print(f"Distances minimales depuis {depart}:")
+    for ville in sorted(distances.keys()):
+        dist = distances[ville]
+        if dist == float('inf'):
+            print(f"  {ville}: ∞ (non accessible)")
+        else:
+            print(f"  {ville}: {dist} km")
+    print("=" * 50)
