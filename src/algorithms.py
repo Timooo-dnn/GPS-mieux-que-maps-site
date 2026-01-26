@@ -81,11 +81,11 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
     return(dico) # un chemin a été trouvé : remontée du résultat
 print(parcours_dist_orth('Toulouse', 'Aussonne', ['Toulouse'], dico))
 
-def calculer_distance_reelle(dico):
+def calculer_distance_reelle(tab):
     distance_reelle_totale = 0
     for i in range(len(dico) - 1):
-        depart=dico[i]
-        arrivee=dico[i+1]
+        depart=tab[i]
+        arrivee=tab[i+1]
         distance_pair=maping[depart][arrivee]
         km=distance_pair[0]
         distance_reelle_totale += km
@@ -102,19 +102,24 @@ print(tris_distance_reelle(dico))
 
 def extract_temps(tab):
     res=0
+    villeD=tab[0]
     for ville in tab[1:]:
         res+= maping[villeD][ville][3]
         villeD=ville
     return res                      #return le temps pour un chemin
-
+print((np.linspace(1,10, 10).tolist()))
+print(np.linspace(0,len(dico), len(dico)-1))
 def dico_temps(dico):
     dico_res={}
-    chemin_res=np.linspace(0,len(dico), 1)
+    temps_res=[]
+    chemin_res=np.linspace(0,len(dico)-1, len(dico)-1)
+    print(chemin_res)
     for cle in dico:
-        temps_res+=extract_temps(dico[cle])
-        for i in range (len(temps_res)):
+        temps_res+=[extract_temps(dico[cle])]
+        for i in range (len(temps_res)-1):
             if temps_res[i+1]<temps_res[i]:
                 temps_res[i], temps_res[i+1]=temps_res[i+1], temps_res[i]
                 chemin_res[i], chemin_res[i+1]=chemin_res[i+1], chemin_res[i]
     return dico_res
 
+#print(dico_temps(dico))
