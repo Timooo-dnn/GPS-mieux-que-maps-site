@@ -8,264 +8,446 @@ from scipy.spatial import cKDTree
 import warnings
 import numpy as np
 from tqdm import tqdm
+import math
 
 warnings.filterwarnings("ignore")
 
-# ================= CONFIGURATION =================
+# ================= CONFIGURATION DES PARAMETRES =================
 
-PATH_ROADS = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\gis_osm_roads_free_1.shp"
-PATH_ADJACENTS = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\adjacences_villes.json"
-PATH_COORDS = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\coords_villes.json"
-PATH_OUTPUT = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\routes_villes_adj.json"
+CHEMIN_ROUTES = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\gis_osm_roads_free_1.shp"
+VILLES_ADJACENTS = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\adjacences_villes.json"
+CHEMIN_COORDS = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\coords_villes.json"
+CHEMIN_SORTIE = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\routes_villes_adj.json"
 
-SPEED_DEFAULTS = {
-    "motorway": 130,
-    "motorway_link": 90,
-    "trunk": 110,
+VITESSE_DEFAULT = {
+    "motorway": 130, 
+    "motorway_link": 90, 
+    "trunk": 110, 
     "trunk_link": 70,
-    "primary": 80,
-    "primary_link": 50,
-    "secondary": 80,
+    "primary": 80, 
+    "primary_link": 50, 
+    "secondary": 80, 
     "secondary_link": 50,
-    "tertiary": 50,
-    "tertiary_link": 50,
-    "residential": 50,
+    "tertiary": 50, 
+    "tertiary_link": 50, 
+    "residential": 50, 
     "living_street": 20,
-    "unclassified": 50,
-    "service": 30
+    "unclassified": 50, 
+    "service": 30,
+    "path": 20, 
+    "footway": 20, 
+    "cycleway": 15, 
+    "track": 20, 
+    "track_grade1": 20,
+    "track_grade2": 15, 
+    "track_grade3": 10, 
+    "track_grade4": 5, 
+    "track_grade5": 5
 }
 
-MOTORWAY_TYPES = ["motorway", "motorway_link"]
+POSSIBILITE_RACCORDEMENTS = {
+    "service": 1.0, 
+    "living_street": 1.0, 
+    "residential": 1.0, 
+    "unclassified": 1.2,
+    "tertiary": 1.5, 
+    "secondary": 3.0,
+    "primary": 5.0, 
+    "trunk": 10.0,
+    "motorway": 20.0, 
+    "motorway_link": 15.0,
+    "path": 0.5, 
+    "footway": 0.5, 
+    "cycleway": 0.8
+}
+
+AUTOROUTES = ["motorway", "motorway_link"]
 
 # ================= FONCTIONS =================
 
-def get_speed(row):
-    """Récupère la vitesse max, sinon applique la vitesse par défaut."""
+def vitesses(row):
     try:
         s = float(row["maxspeed"])
-        if s > 0:
-            return s
-    except Exception:
+        if s > 0: return s
+    except: 
         pass
-    return SPEED_DEFAULTS.get(row["fclass"], 50)
+    return VITESSE_DEFAULT.get(row["fclass"], 50)
 
 
-def calculate_z_level(row):
-    """
-    Calcule le niveau vertical (Z) pour éviter les croisements impossibles.
-    Priorité : Layer explicite > Bridge > Tunnel > Sol (0)
-    """
+def z_level(row):
     try:
         layer = int(row["layer"])
-        if layer != 0:
-            return layer
-    except (ValueError, KeyError):
+        if layer != 0: return layer
+    except: 
         pass
-
-    is_bridge = row.get("bridge", "F") in ["T", "True", True]
-    is_tunnel = row.get("tunnel", "F") in ["T", "True", True]
-
-    if is_bridge:
-        return 1
-    if is_tunnel:
-        return -1
-
-    return 0
+    contient_bridge = row.get("bridge", "F") in ["T", "True", True]
+    contient_tunnel = row.get("tunnel", "F") in ["T", "True", True]
+    return 1 if contient_bridge else (-1 if contient_tunnel else 0)
 
 
-def build_projected_graph(gdf_roads_projected):
-    print("Construction du graphe avec gestion des niveaux Z...")
+def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de route en graph orienté avec distance et temps
+    print("Préparation des arêtes")
+    gdf_arretes = gdf_roads_projected.explode(index_parts=False).reset_index(drop=True)
+    
+    gdf_arretes["weight"] = gdf_arretes.geometry.length
+    gdf_arretes["speed_ms"] = gdf_arretes["final_speed"] / 3.6
+    gdf_arretes["time"] = np.where(gdf_arretes["speed_ms"] > 0, gdf_arretes["weight"] / gdf_arretes["speed_ms"], math.inf)
+    
+    gdf_arretes["u"] = gdf_arretes.geometry.apply(lambda g: g.coords[0])
+    gdf_arretes["v"] = gdf_arretes.geometry.apply(lambda g: g.coords[-1])
 
-    gdf_edges = gdf_roads_projected.explode(index_parts=False).reset_index(drop=True)
-
-    gdf_edges["weight"] = gdf_edges.geometry.length
-    gdf_edges["speed_ms"] = gdf_edges["final_speed"] / 3.6
-    gdf_edges["time"] = np.where(
-        gdf_edges["speed_ms"] > 0,
-        gdf_edges["weight"] / gdf_edges["speed_ms"],
-        0
-    )
-
-    gdf_edges["u"] = gdf_edges.geometry.apply(lambda g: g.coords[0])
-    gdf_edges["v"] = gdf_edges.geometry.apply(lambda g: g.coords[-1])
-
-    cols_to_keep = ["u", "v", "weight", "time", "geometry", "fclass", "z_level"]
-
-    mask_direct = gdf_edges["oneway"].isin(["F", "B", "N", "False", None])
-    edges_direct = gdf_edges.loc[mask_direct, cols_to_keep].copy()
-
-    mask_reverse = gdf_edges["oneway"].isin(["B", "N", "False", None])
-    edges_reverse = gdf_edges.loc[mask_reverse, cols_to_keep].copy()
-
-    edges_reverse = edges_reverse.rename(columns={"u": "v", "v": "u"})
-    edges_reverse["geometry"] = edges_reverse["geometry"].apply(
-        lambda g: LineString(list(g.coords)[::-1])
-    )
-
-    all_edges = pd.concat([edges_direct, edges_reverse], ignore_index=True)
+    cols = ["u", "v", "weight", "time", "geometry", "fclass", "z_level"]
+    
+    routes_direct = gdf_arretes["oneway"].isin(["F", "B", "N", "False", None])
+    arrete_direct = gdf_arretes.loc[routes_direct, cols].copy()
+    
+    routes_inverse = gdf_arretes["oneway"].isin(["B", "N", "False", None])
+    arretes_inverse = gdf_arretes.loc[routes_inverse, cols].copy()
+    arretes_inverse = arretes_inverse.rename(columns={"u": "v", "v": "u"})
+    arretes_inverse["geometry"] = arretes_inverse["geometry"].apply(lambda g: LineString(list(g.coords)[::-1]))
+    
+    arretes_tot = pd.concat([arrete_direct, arretes_inverse], ignore_index=True)
 
     G = nx.MultiDiGraph()
-    for _, row in all_edges.iterrows():
-        G.add_edge(
-            row["u"],
-            row["v"],
-            weight=row["weight"],
-            time=row["time"],
-            geometry=row["geometry"],
-            fclass=row["fclass"],
-            z_level=row["z_level"]
-        )
-
+    for _, row in tqdm(arretes_tot.iterrows(), total=len(arretes_tot), desc="Construction Graphe"):
+        G.add_edge(row["u"], row["v"], 
+                   weight=row["weight"], time=row["time"], 
+                   geometry=row["geometry"], fclass=row["fclass"], z_level=row["z_level"])
+    
     if len(G) > 0:
+        print("Nettoyage des routes isolées...")
         largest_cc = max(nx.weakly_connected_components(G), key=len)
         G = G.subgraph(largest_cc).copy()
-        print(f"Graphe prêt : {len(G.nodes)} nœuds.")
-
+        print(f"Graphe principal : {len(G.nodes)} nœuds.")
+        
     return G
+
+def cherche_raccordement_villes_routes(point, gdf_arretes, spatial_index, G_nodes_set, distance_max=3000): #Identifie le meilleur point d'ancrage pour chaque ville sur le graph précédent
+    rayon_3 = point.buffer(distance_max).bounds
+    routes_possibles = list(spatial_index.intersection(rayon_3))
+    
+    if not routes_possibles:
+        return None
+
+    arretes_possibles = gdf_arretes.iloc[routes_possibles].copy()
+    
+    arretes_possibles["dist_geom"] = arretes_possibles.geometry.distance(point)
+    arretes_possibles = arretes_possibles[arretes_possibles["dist_geom"] < distance_max]
+    
+    if arretes_possibles.empty:
+        return None
+
+    meilleur_routes = None
+    meilleur_score = float('inf')
+
+    for idx, row in arretes_possibles.iterrows():
+        u, v = row['u'], row['v']
+        
+        if u not in G_nodes_set and v not in G_nodes_set:
+            continue
+            
+        penalite_z = 1.0
+        if row['z_level'] != 0:
+            penalite_z = 5.0
+
+        penalite_type_routes = POSSIBILITE_RACCORDEMENTS.get(row['fclass'], 2.0)
+        
+        score = row['dist_geom'] * penalite_type_routes * penalite_z
+        
+        if score < meilleur_score:
+            meilleur_score = score
+            geom = row.geometry
+            dist_along = geom.project(point)
+            dist_along = max(0, min(geom.length, dist_along))
+            proj_pt = geom.interpolate(dist_along)
+            
+            meilleur_routes = {
+                'arrete': (u, v),
+                'données_arretes': row.drop(['u', 'v', 'dist_geom']).to_dict(),
+                'projection_point': proj_pt,
+                'distance': row['dist_geom'],
+                'coordonnées_projetes': (proj_pt.x, proj_pt.y)
+            }
+
+    return meilleur_routes
+
+def insert_projected_point_in_graph(G, tree, listes_noeud, arrete_infos, point_villes, coord_villes): #Crée une intersection la ou le meilleur point d'ancrage a été identifié
+    if arrete_infos is None:
+        return None, False
+    
+    u, v = arrete_infos['arrete']
+    données_arretes = arrete_infos['données_arretes']
+    coordonnées_projetes = arrete_infos['coordonnées_projetes']
+    projection_point = arrete_infos['projection_point']
+    
+    distance, idx = tree.query([coordonnées_projetes[0], coordonnées_projetes[1]], k=1)
+    
+    if distance < 1.0:
+        neoud_projeté = listes_noeud[idx]
+    else:
+        neoud_projeté = coordonnées_projetes
+        
+        geometrie_original = données_arretes['geometry']
+        distance_afaire = geometrie_original.project(projection_point)
+        liste_coordonnées = list(geometrie_original.coords)
+        
+        # Trouver l'index d'insertion
+        distance_tot = 0
+        insertion_index = 1
+        for i in range(len(liste_coordonnées) - 1):
+            p1, p2 = Point(liste_coordonnées[i]), Point(liste_coordonnées[i+1])
+            d = p1.distance(p2)
+            if distance_tot <= distance_afaire <= distance_tot + d + 0.01:
+                insertion_index = i + 1
+                break
+            distance_tot += d
+        
+        coords_ap = liste_coordonnées[:insertion_index] + [coordonnées_projetes]
+        coords_pb = [coordonnées_projetes] + liste_coordonnées[insertion_index:]
+        
+        seg_ap = LineString(coords_ap)
+        seg_pb = LineString(coords_pb)
+        
+        def data_routes_créé(geom, orig_w, orig_t):
+            ratio = geom.length / orig_w if orig_w > 0 else 0
+            return geom.length, orig_t * ratio
+
+        w_ap, t_ap = data_routes_créé(seg_ap, données_arretes['weight'], données_arretes['time'])
+        w_pb, t_pb = data_routes_créé(seg_pb, données_arretes['weight'], données_arretes['time'])
+
+        if G.has_edge(u, v):
+            G.remove_edge(u, v)
+            
+        G.add_edge(u, neoud_projeté, weight=w_ap, time=t_ap, geometry=seg_ap, 
+                   fclass=données_arretes['fclass'], z_level=données_arretes.get('z_level', 0))
+        G.add_edge(neoud_projeté, v, weight=w_pb, time=t_pb, geometry=seg_pb, 
+                   fclass=données_arretes['fclass'], z_level=données_arretes.get('z_level', 0))
+
+        sens_inverse = G.get_edge_data(v, u)
+        if sens_inverse:
+            keys = list(sens_inverse.keys())
+            for k in keys:
+                données_sens_inverse = sens_inverse[k]
+                if 'geometry' in données_sens_inverse:
+                    G.remove_edge(v, u, key=k)
+                    G.add_edge(v, neoud_projeté, weight=w_pb, time=t_pb, 
+                               geometry=LineString(list(seg_pb.coords)[::-1]),
+                               fclass=données_sens_inverse['fclass'], z_level=données_sens_inverse.get('z_level', 0))
+                    G.add_edge(neoud_projeté, u, weight=w_ap, time=t_ap, 
+                               geometry=LineString(list(seg_ap.coords)[::-1]),
+                               fclass=données_sens_inverse['fclass'], z_level=données_sens_inverse.get('z_level', 0))
+
+    villes_a_projeté = LineString([point_villes, projection_point])
+    dist_v = villes_a_projeté.length
+    time_v = dist_v / (30/3.6)
+    
+    G.add_edge(coord_villes, neoud_projeté, weight=dist_v, time=time_v, 
+               geometry=villes_a_projeté, fclass="service", z_level=0)
+    G.add_edge(neoud_projeté, coord_villes, weight=dist_v, time=time_v, 
+               geometry=LineString(list(villes_a_projeté.coords)[::-1]), fclass="service", z_level=0)
+    
+    return neoud_projeté, True
+
+def raccorde_ville_route(G, coord_villes, coord_villes_projeté, distance_m): #Crée le lien (D/I) entre la nouvelle intersection et la ville
+    temps_s = distance_m / (30 / 3.6)
+    
+    geom_ville_vers_route= LineString([coord_villes, coord_villes_projeté])
+    geom_route_vers_ville = LineString([coord_villes, coord_villes_projeté])
+    
+    G.add_edge(coord_villes, coord_villes_projeté, 
+               weight=distance_m, time=temps_s, 
+               geometry=geom_ville_vers_route, fclass="connector", z_level=0)
+
+    G.add_edge(coord_villes_projeté, coord_villes, 
+               weight=distance_m, time=temps_s, 
+               geometry=geom_route_vers_ville, fclass="connector", z_level=0)
+
+def meilleur_noeud_fallback(point_ville, arbre, liste_noeud, G, k_voisins=10): #Si aucune route n'est trouvé précédemment, on utilise le noeud le plus logique autour de la ville
+    coords_ville = (point_ville.x, point_ville.y)
+    distances, indices = arbre.query([coords_ville[0], coords_ville[1]], k=k_voisins)
+    
+    meilleur_noeud = None
+    meilleur_score = float('inf')
+
+    attractivité_route = {
+        "motorway": 0.1,
+        "trunk": 0.2,
+        "primary": 0.3,
+        "secondary": 0.5,
+        "tertiary": 0.8,
+        "residential": 1.2,
+        "service": 2.0,
+        "track": 3.0,
+        "connector": 10.0
+    }
+
+    for dist, idx in zip(distances, indices):
+        neoud = liste_noeud[idx]
+        
+        arrtes = G.edges(neoud, data=True)
+        if not arrtes:
+            continue
+            
+        meilleur_fclass = "service"
+        classes_found = [data.get("fclass") for _, _, data in arrtes]
+        
+        coeff_actuel = 5.0
+        for f in classes_found:
+            coeff = attractivité_route.get(f, 2.0)
+            if coeff < coeff_actuel:
+                coeff_actuel = coeff
+        
+        score = dist * coeff_actuel
+        
+        if score < meilleur_score:
+            meilleur_score = score
+            meilleur_noeud = neoud
+
+    return meilleur_noeud, distances[0]
 
 # ================= PRINCIPAL =================
 
-print("Chargement des données...")
-gdf = gpd.read_file(PATH_ROADS)
+if __name__ == "__main__":
+    print("Chargement des données...")
+    gdf = gpd.read_file(CHEMIN_ROUTES)
 
-gdf = gdf[gdf["fclass"].isin(SPEED_DEFAULTS.keys())].copy()
-gdf["final_speed"] = gdf.apply(get_speed, axis=1)
+    gdf = gdf.copy()
 
-for col in ["layer", "bridge", "tunnel"]:
-    if col not in gdf.columns:
-        gdf[col] = 0 if col == "layer" else "F"
+    print("Calcul des vitesses et niveaux Z...")
+    gdf["final_speed"] = gdf.apply(vitesses, axis=1)
 
-gdf["z_level"] = gdf.apply(calculate_z_level, axis=1)
+    for col in ["layer", "bridge", "tunnel"]:
+        if col not in gdf.columns:
+            gdf[col] = 0 if col == "layer" else "F"
 
-gdf_proj = gdf.to_crs(epsg=2154)
+    gdf["z_level"] = gdf.apply(z_level, axis=1)
 
-with open(PATH_ADJACENTS, "r", encoding="utf-8") as f:
-    adj_data = json.load(f)
+    print("Reprojection des routes...")
+    gdf_proj = gdf.to_crs(epsg=2154)
 
-with open(PATH_COORDS, "r", encoding="utf-8") as f:
-    coords_data = json.load(f)
+    print("Chargement JSON villes...")
+    with open(VILLES_ADJACENTS, "r", encoding="utf-8") as f:
+        adj_data = json.load(f)
+    with open(CHEMIN_COORDS, "r", encoding="utf-8") as f:
+        coords_data = json.load(f)
 
-G = build_projected_graph(gdf_proj)
-
-print("Préparation de l'index spatial (filtrage des ponts/tunnels)...")
-
-valid_nodes = set()
-for u, v, data in G.edges(data=True):
-    if data["z_level"] == 0:
-        valid_nodes.add(u)
-        valid_nodes.add(v)
-
-valid_nodes_list = list(valid_nodes)
-
-if not valid_nodes_list:
-    print("ATTENTION: Aucun nœud au niveau 0 trouvé. Utilisation de tous les nœuds.")
-    valid_nodes_list = list(G.nodes)
-
-tree = cKDTree(valid_nodes_list)
-
-print("Raccordement des villes au réseau...")
-cities_df = pd.DataFrame.from_dict(coords_data, orient="index").dropna(subset=["lon", "lat"])
-
-cities_gdf = gpd.GeoDataFrame(
-    cities_df,
-    geometry=gpd.points_from_xy(cities_df.lon, cities_df.lat),
-    crs="EPSG:4326"
-).to_crs(epsg=2154)
-
-processed_cities = {}
-city_coords = np.c_[cities_gdf.geometry.x, cities_gdf.geometry.y]
-
-dists, idxs = tree.query(city_coords, k=1)
-
-for i, name in enumerate(cities_gdf.index):
-    node_coords = valid_nodes_list[idxs[i]]
-    processed_cities[name] = {
-        "node": node_coords,
-        "dist_to_road": dists[i],
-        "orig_data": coords_data[name]
-    }
-
-final_output = {}
-stats_success = 0
-stats_fail = 0
-
-for ville_nom, villes_voisines in tqdm(adj_data.items(), desc="Calcul Itinéraires"):
-    if (
-        ville_nom not in processed_cities
-        or processed_cities[ville_nom]["dist_to_road"] > 5000
-    ):
-        continue
-
-    start_info = processed_cities[ville_nom]
-    final_output[ville_nom] = {
-        "coords": start_info["orig_data"],
-        "adjacents": []
-    }
-
-    for voisin_nom in villes_voisines:
-        if voisin_nom not in processed_cities:
-            continue
-
-        end_info = processed_cities[voisin_nom]
-
-        try:
-            path_nodes = nx.shortest_path(
-                G,
-                source=start_info["node"],
-                target=end_info["node"],
-                weight="weight"
-            )
-
-            path_geometries = []
-            total_dist = 0
-            total_time = 0
-            has_motorway = False
-
-            for u, v in zip(path_nodes[:-1], path_nodes[1:]):
-                edge_data = G.get_edge_data(u, v)
-                data = min(edge_data.values(), key=lambda x: x["weight"])
-
-                path_geometries.append(data["geometry"])
-                total_dist += data["weight"]
-                total_time += data["time"]
-
-                if data["fclass"] in MOTORWAY_TYPES:
-                    has_motorway = True
-
-            full_line_proj = linemerge(path_geometries)
-
-            full_line_wgs84 = gpd.GeoSeries(
-                [full_line_proj],
-                crs="EPSG:2154"
-            ).to_crs(epsg=4326).iloc[0]
-
-            coords_list = []
-            if hasattr(full_line_wgs84, "geoms"):
-                for geom in full_line_wgs84.geoms:
-                    coords_list.extend(list(geom.coords))
-            else:
-                coords_list = list(full_line_wgs84.coords)
-
-            dist_km = total_dist / 1000.0
-            if dist_km > 300:
-                continue
-
-            final_output[ville_nom]["adjacents"].append({
-                "nom": voisin_nom,
-                "distance_km": round(dist_km, 3),
-                "vitesse_moyenne_kmh": round(
-                    dist_km / (total_time / 3600), 1
-                ) if total_time > 0 else 0,
-                "autoroute": has_motorway,
-                "path_geometry": coords_list
+    print("Conversion des villes...")
+    cities_data_list = []
+    for city_id, info in tqdm(coords_data.items(), desc="Traitement JSON villes"):
+        lat, lon = info.get("lat"), info.get("lon")
+        if lat is not None and lon is not None:
+            cities_data_list.append({
+                "city_id": city_id,
+                "geometry": Point(lon, lat)
             })
 
-            stats_success += 1
+    villes_gdf = gpd.GeoDataFrame(cities_data_list, crs="EPSG:4326").to_crs(epsg=2154)
+    villes_gdf.set_index("city_id", inplace=True)
 
-        except Exception:
-            stats_fail += 1
+    # Graphs routes
+    G = construction_graph_routes(gdf_proj)
+    set_noeud_validé = set(G.nodes)
+    liste_noeud_validé = list(set_noeud_validé)
+    arbre = cKDTree(liste_noeud_validé)
 
-print(f"Terminé. Succès : {stats_success}, Échecs : {stats_fail}")
+    # applicage des layer
+    print("Indexation spatiale des routes...")
+    index_arrete_liste = []
+    for u, v, data in G.edges(data=True):
+        if data.get("z_level", 0) == 0:
+            d = data.copy()
+            d['u'], d['v'] = u, v
+            index_arrete_liste.append(d)
 
-with open(PATH_OUTPUT, "w", encoding="utf-8") as f:
-    json.dump(final_output, f, ensure_ascii=False, indent=4)
+    gdf_arretes_index = gpd.GeoDataFrame(index_arrete_liste, crs="EPSG:2154")
+    index_spatial = gdf_arretes_index.sindex
+
+    # Raccordement intelligent des villes
+    print("Raccordement des villes au réseau...")
+    villes_raccordées = {}
+    
+    for name, row in tqdm(villes_gdf.iterrows(), total=len(villes_gdf), desc="Projection"):
+        point_ville = row.geometry
+        coords_villes = (point_ville.x, point_ville.y)
+
+        info_arrete = cherche_raccordement_villes_routes(point_ville, gdf_arretes_index, index_spatial, set_noeud_validé)
+        
+        lien_succès = False
+        if info_arrete:
+            _, success = insert_projected_point_in_graph(
+                G, arbre, liste_noeud_validé, info_arrete, point_ville, coords_villes
+            )
+            if success:
+                villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
+                lien_succès = True
+
+        if not lien_succès:
+            best_node, real_dist = meilleur_noeud_fallback(point_ville, arbre, liste_noeud_validé, G)
+            
+            if best_node:
+                raccorde_ville_route(G, coords_villes, best_node, real_dist)
+                villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
+            else:
+                print(f"Erreur critique : Impossible de raccorder {name}")
+
+    # Calcul des itinéraires
+    sortie = {}
+    stats_succès, stats_échec = 0, 0
+
+    for ville_nom, villes_voisines in tqdm(adj_data.items(), desc="Calcul Itinéraires"):
+        if ville_nom not in villes_raccordées: 
+            continue
+        
+        noeud_départ = villes_raccordées[ville_nom]["node"]
+        sortie[ville_nom] = {"coords": villes_raccordées[ville_nom]["orig_data"], "adjacents": []}
+
+        for voisin_nom in villes_voisines:
+            if voisin_nom not in villes_raccordées: 
+                continue
+            neoud_fin = villes_raccordées[voisin_nom]["node"]
+
+            try:
+                chemin_de_noeuds = nx.shortest_path(G, source=noeud_départ, target=neoud_fin, weight="time")
+
+                chemin_geom = []
+                total_dist, total_temps = 0, 0
+                sur_autoroute = False
+
+                for i in range(len(chemin_de_noeuds) - 1):
+                    u, v = chemin_de_noeuds[i], chemin_de_noeuds[i+1]
+                    arrete_data = G.get_edge_data(u, v)
+                    meilleur_k = min(arrete_data, key=lambda k: arrete_data[k]["time"])
+                    data = arrete_data[meilleur_k]
+
+                    chemin_geom.append(data["geometry"])
+                    total_dist += data["weight"]
+                    total_temps += data["time"]
+                    if data.get("fclass") in AUTOROUTES: sur_autoroute = True
+
+                ligne_route = linemerge(chemin_geom)
+                ligne_route_wgs84 = gpd.GeoSeries([ligne_route], crs="EPSG:2154").to_crs(epsg=4326).iloc[0]
+                
+                listes_coords = list(ligne_route_wgs84.coords) if ligne_route_wgs84.geom_type == 'LineString' else []
+                if not listes_coords and ligne_route_wgs84.geom_type == 'MultiLineString':
+                    for g in ligne_route_wgs84.geoms: listes_coords.extend(list(g.coords))
+
+                dist_km = total_dist / 1000.0
+                if dist_km > 100: 
+                    continue
+
+                sortie[ville_nom]["adjacents"].append({
+                    "nom": voisin_nom,
+                    "distance_km": round(dist_km, 3),
+                    "temps_min": round(total_temps / 60, 1),
+                    "vitesse_moyenne_kmh": round(dist_km / (total_temps / 3600), 1) if total_temps > 0 else 0,
+                    "autoroute": sur_autoroute,
+                    "path_geometry": listes_coords
+                })
+                stats_succès += 1
+
+            except (nx.NetworkXNoPath, Exception):
+                stats_échec += 1
+
+    print(f"Terminé. Succès : {stats_succès}, Échecs : {stats_échec}")
+    with open(CHEMIN_SORTIE, "w", encoding="utf-8") as f:
+        json.dump(sortie, f, ensure_ascii=False, indent=4)
