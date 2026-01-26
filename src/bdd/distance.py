@@ -374,10 +374,10 @@ if __name__ == "__main__":
         
         lien_succès = False
         if info_arrete:
-            _, success = insert_projected_point_in_graph(
+            _, succès = insert_projected_point_in_graph(
                 G, arbre, liste_noeud_validé, info_arrete, point_ville, coords_villes
             )
-            if success:
+            if succès:
                 villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
                 lien_succès = True
 
@@ -437,9 +437,9 @@ if __name__ == "__main__":
 
                 sortie[ville_nom]["adjacents"].append({
                     "nom": voisin_nom,
-                    "distance_km": round(dist_km, 3),
-                    "temps_min": round(total_temps / 60, 1),
-                    "vitesse_moyenne_kmh": round(dist_km / (total_temps / 3600), 1) if total_temps > 0 else 0,
+                    "distance_km": round(dist_km, 2),
+                    "temps_min": round(total_temps / 60, 2),
+                    "vitesse_moyenne_kmh": round(dist_km / (total_temps / 3600), 2) if total_temps > 0 else 0,
                     "autoroute": sur_autoroute,
                     "path_geometry": listes_coords
                 })
