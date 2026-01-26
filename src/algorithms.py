@@ -7,9 +7,6 @@ import math
 #2. Vérification si ville d'arrivée dans les voisines directes de la ville de départ
 #3. Si non, trier les villes voisines en fonction de la distance orthodromique à la ville d'arrivée
 #4. Calcul des 3 chemins les plus courts en distance orthodromique et les sortirs sous le format:
-"""Chemin1[Toulouse, Colomiers, Tournefeuille, Aussonne]
-Chemin2[Toulouse, Blagnac, Aussonne]
-Chemin3[Toulouse, Colomiers, Aussonne]"""
 #5. Calcul de la distance réelle pour chaque chemin
 #6. Trie du plus court au plus long chemin en distance réelle 
 #7. Calcul du temps réelle pour chaque chemin (en prenant en compte la vitesse moyenne des routes entre chaque)
