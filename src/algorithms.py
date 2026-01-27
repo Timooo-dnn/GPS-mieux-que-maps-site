@@ -81,6 +81,8 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
     return(dico) # un chemin a été trouvé : remontée du résultat
 print(parcours_dist_orth('Toulouse', 'Aussonne', ['Toulouse'], dico))
 
+## Calcul des distances réelles avec le top 3 orthodromique
+
 def calculer_distance_reelle(tab):
     distance_reelle_totale = 0
     for i in range(len(dico) - 1):
@@ -91,6 +93,8 @@ def calculer_distance_reelle(tab):
         distance_reelle_totale += km
     return distance_reelle_totale
 print(calculer_distance_reelle(['Toulouse', 'Tournefeuille', 'Colomiers', 'Aussonne']))
+
+## Tri du top 3 distances réelles dans l'ordre croissant
 
 def tris_distance_reelle(dico):
     dico_res={}
@@ -123,3 +127,6 @@ def dico_temps(dico):
     return dico_res
 
 #print(dico_temps(dico))
+
+## Formulation des données sorties sous format {Chemin}:[Distance_réelle],[Temps réel],[Booléen autoroute]
+
