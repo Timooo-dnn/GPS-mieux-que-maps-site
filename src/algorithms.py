@@ -113,13 +113,13 @@ def extract_temps(tab):
     return res                      #return le temps pour un chemin
 k=np.linspace(1,10, 10).tolist()
 k[1], k[0]=k[0], k[1]
-print(k)
+print((np.int_(k)))
 chemin_res=np.linspace(0,len(dico)-1, len(dico))
 def dico_temps(dico):
     dico_res={}
     temps_res=[]
     chemin_res=np.linspace(0,len(dico)-1, len(dico))
-    chemin_res=np.int_(chemin_res)
+    chemin_res=list(chemin_res)
     print(chemin_res)
     for cle in dico:
         temps_res+=[extract_temps(dico[cle])]
