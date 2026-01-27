@@ -110,28 +110,36 @@ def extract_temps(tab):
     for ville in tab[1:]:
         res+= maping[villeD][ville][3]
         villeD=ville
-    return res                      #return le temps pour un chemin
-k=np.linspace(1,10, 10).tolist()
-k[1], k[0]=k[0], k[1]
-print((np.int_(k)))
-chemin_res=np.linspace(0,len(dico)-1, len(dico))
-def dico_temps(dico):
-    dico_res={}
-    temps_res=[]
-    chemin_res=np.linspace(0,len(dico)-1, len(dico))
-    chemin_res=list(chemin_res)
-    print(chemin_res)
-    for cle in dico:
-        temps_res+=[extract_temps(dico[cle])]
-        print(temps_res)
-        for i in range (0,len(temps_res)-1):
-            if temps_res[i+1]<temps_res[i]:
-                temps_res[i], temps_res[i+1]=temps_res[i+1], temps_res[i]
-                chemin_res[i], chemin_res[i+1]=chemin_res[i+1], chemin_res[i]
-            dico_res[chemin_res[i]]=temps_res[i]
-    return dico_res
+    return res                      #return un temps pour un chemin sous forme de [villeD, ville, ville, villeA]
+print(dico)
 
-#print(dico_temps(dico))
+
+def tri_temps_reel(dico):
+    dico_res={}
+    for cle in dico:
+        res = extract_temps(dico[cle])
+        dico_res[cle]=round(res, 2)
+    return dict(sorted(dico_res.items(), key=lambda item: item[1]))
+print(tri_temps_reel(dico))                         #return un dico trié en fonction du temps sous forme {'0': 11.4, '1-bis': 15.0, '1': 18.0}
+
 
 ## Formulation des données sorties sous format {Chemin}:[Distance_réelle],[Temps réel],[Booléen autoroute]
 
+## Formulation des données sorties sous format sortie_formalisée=[{Chemin:[chemin]:[Distance_réelle],[Temps réel],[Booléen autoroute]}]
+
+def formalisation_donnees(chemin,distance,temps):
+    sortie_formalisee = []
+    for id_chemin in chemin:
+        donnees_chemin = {
+            "ID" : id_chemin,
+            "Chemin" : chemin[id_chemin],
+            "distance" : distance[id_chemin],
+            "temps" : temps[id_chemin],
+            "Autoroute" : "A" in str(maping.get(chemin[id_chemin][0], {}).get(chemin[id_chemin][1], ""))
+        }
+        sortie_formalisee.append(donnees_chemin)
+    return sortie_formalisee
+chemin_entree = {'0': ['Toulouse', 'Blagnac', 'Aussonne']}
+distance_entree = {'1-bis': 12, '0': 19, '1': 27}
+temps_entree = {'1-bis': 50, '0': 45, '1': 30}
+print(formalisation_donnees(chemin_entree, distance_entree, temps_entree))
