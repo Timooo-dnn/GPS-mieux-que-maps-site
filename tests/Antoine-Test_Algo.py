@@ -136,17 +136,23 @@ def dico_temps(dico):
             dico_res[chemin_res[i]]=temps_res[i]
     return dico_res
 
-## Formulation des données sorties sous format {Chemin}:[Distance_réelle],[Temps réel],[Booléen autoroute]
+## Formulation des données sorties sous format sortie_formalisée=[{Chemin:[chemin]:[Distance_réelle],[Temps réel],[Booléen autoroute]}]
 
-chemin = {'0': ['Toulouse', 'Blagnac', 'Aussonne']}
-distance = {'1-bis': 12, '0': 19, '1': 27}
-temps = {'1-bis': 12, '0': 19, '1': 27}
+
 
 def formalisation_donnees(chemin,distance,temps):
-    chemin = {}
-    distance = ["test"]
-    temps = []
-    autoroute = False
-    
-    return(distance)
-print(formalisation_donnees(chemin,distance,temps,))
+    sortie_formalisee = []
+    for id_chemin in chemin:
+        donnees_chemin = {
+            "ID" : id_chemin,
+            "Chemin" : chemin[id_chemin],
+            "distance" : distance[id_chemin],
+            "temps" : temps[id_chemin],
+            "Autoroute" : "A" in str(maping.get(chemin[id_chemin][0], {}).get(chemin[id_chemin][1], ""))
+        }
+        sortie_formalisee.append(donnees_chemin)
+    return sortie_formalisee
+chemin_entree = {'0': ['Toulouse', 'Blagnac', 'Aussonne']}
+distance_entree = {'1-bis': 12, '0': 19, '1': 27}
+temps_entree = {'1-bis': 50, '0': 45, '1': 30}
+print(formalisation_donnees(chemin_entree, distance_entree, temps_entree))
