@@ -11,15 +11,14 @@
         input { padding: 8px; width: 100%; box-sizing: border-box; }
         button { padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; }
         button:hover { background-color: #218838; }
-        
-        /* Style pour afficher le résultat brut proprement */
+
         #resultat-brut {
             background-color: #f4f4f4;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
             margin-top: 20px;
-            white-space: pre-wrap; /* Permet de garder les sauts de ligne */
+            white-space: pre-wrap;
             font-family: monospace;
         }
     </style>
@@ -57,7 +56,6 @@
             zoneResultat.innerText = "Chargement...";
 
             try {
-                // Appel au backend Python
                 const reponse = await fetch('/api/calculer', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -66,7 +64,6 @@
 
                 const donnees = await reponse.json();
 
-                // Affichage brut (JSON.stringify rend le JSON lisible en texte)
                 zoneResultat.innerText = JSON.stringify(donnees, null, 4);
 
             } catch (error) {

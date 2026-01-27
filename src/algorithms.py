@@ -43,10 +43,6 @@ def trivoisines(voisines):
             voisinestriées.append(voisines[imin][0])
             del voisines[imin]
     return voisinestriées
-'''
-#Jeu de test
-voisines_test=[['A', 10],['B', 23],['C', 2], ['D', 42]]
-print(trivoisines(voisines_test))'''
 
 ## premier test pour voir le format de chemin
 # 1. Fonction permettant de trier les villles dans la liste ville départ par rapport distance orthodromique
@@ -141,6 +137,10 @@ def formalisation_donnees(chemin,distance,temps):
         }
         sortie_formalisee.append(donnees_chemin)
     return sortie_formalisee
+
+def test_formalisation():
+    return formalisation_donnees(chemin_entree, distance_entree, temps_entree)
+
 chemin_entree = {'0': ['Toulouse', 'Blagnac', 'Aussonne']}
 distance_entree = {'1-bis': 12, '0': 19, '1': 27}
 temps_entree = {'1-bis': 50, '0': 45, '1': 30}
