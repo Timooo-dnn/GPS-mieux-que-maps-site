@@ -1,7 +1,7 @@
 import json
 import os
 
-with open(r"C:\Users\Timothée\Desktop\ENAC\Python\GPS-mieux-que-maps\src\data\routes_villes_adj.json",encoding="utf-8") as f:
+with open(r"C:\Users\thoma\Documents\ENAC\Cours\Info\Projet\GPS-mieux-que-maps\src\data\routes_villes_adj.json",encoding="utf-8") as f:
     dico_brut = json.load(f)
 
 dico_final = {}
@@ -16,7 +16,7 @@ for ville_id in dico_brut:
             dico_final[ville_id][nom_voisine] = [dico_adjacent["distance_km"],dico_adjacent["temps_min"],dico_adjacent["vitesse_moyenne_kmh"],dico_adjacent["autoroute"]]
 
 
-chemin_entree = r"C:\Users\Timothée\Desktop\ENAC\Python\GPS-mieux-que-maps\src\data\routes_villes_adj.json"
+chemin_entree = r"C:\Users\thoma\Documents\ENAC\Cours\Info\Projet\GPS-mieux-que-maps\src\data\routes_villes_adj.json"
 chemin_sortie = os.path.join(os.path.dirname(chemin_entree), "dico_final.json")
 
 with open(chemin_sortie, "w", encoding="utf-8") as f:
