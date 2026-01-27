@@ -119,7 +119,7 @@ def tri_temps_reel(dico):
         dico_res[cle]=round(res, 2)
     return dict(sorted(dico_res.items(), key=lambda item: item[1]))
 print(tri_temps_reel(dico))                         #return un dico trié en fonction du temps sous forme {'0': 11.4, '1-bis': 15.0, '1': 18.0}
-
+'''
 
 ## Formulation des données sorties sous format {Chemin}:[Distance_réelle],[Temps réel],[Booléen autoroute]
 
@@ -144,4 +144,3 @@ def test_formalisation():
 chemin_entree = {'0': ['Toulouse_26686518', 'Blagnac_26691725', 'Beauzelle_26696473']}
 distance_entree = {'1-bis': 12, '0': 19, '1': 27}
 temps_entree = {'1-bis': 50, '0': 45, '1': 30}
-print(formalisation_donnees(chemin_entree, distance_entree, temps_entree))'''
