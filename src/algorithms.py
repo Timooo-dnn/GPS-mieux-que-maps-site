@@ -43,10 +43,6 @@ def trivoisines(voisines):
             voisinestriées.append(voisines[imin][0])
             del voisines[imin]
     return voisinestriées
-'''
-#Jeu de test
-voisines_test=[['A', 10],['B', 23],['C', 2], ['D', 42]]
-print(trivoisines(voisines_test))'''
 
 ## premier test pour voir le format de chemin
 # 1. Fonction permettant de trier les villles dans la liste ville départ par rapport distance orthodromique
