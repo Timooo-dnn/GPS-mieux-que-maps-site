@@ -1,4 +1,5 @@
-A = "Autoroute"
+import json
+A= "Autoroute"
 V = "Voie rapide"
 N = "Nationale"
 D = "Départementale"
@@ -29,3 +30,7 @@ maping = {
     "Colomiers":[12,N,False,8.0]
 }
 }
+
+with open(r"GPS-mieux-que-maps\src\data\dico_final.json",encoding="utf-8") as f:
+    maping1 = json.load(f)
+

@@ -67,7 +67,7 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
             voisines.append([voisine, distance_orthodromique(localisation_ville[voisine][0], localisation_ville[voisine][1], localisation_ville[villeA][0], localisation_ville[villeA][1])])
     voisinestri=trivoisines(voisines)
     print(voisinestri)
-    for voisine in voisinestri[:4] :
+    for voisine in voisinestri[:3] :
         res = parcours_dist_orth(voisine, villeA, chemin+[voisine], dico)
         if villeA in res:
             liste.append(res)
@@ -79,8 +79,10 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
             i+=1
 
     return(dico) # un chemin a été trouvé : remontée du résultat
+#print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
 print(parcours_dist_orth('Toulouse', 'Aussonne', ['Toulouse'], dico))
 
+'''
 ## Calcul des distances réelles avec le top 3 orthodromique
 
 def calculer_distance_reelle(tab):
@@ -142,4 +144,4 @@ def formalisation_donnees(chemin,distance,temps):
 chemin_entree = {'0': ['Toulouse', 'Blagnac', 'Aussonne']}
 distance_entree = {'1-bis': 12, '0': 19, '1': 27}
 temps_entree = {'1-bis': 50, '0': 45, '1': 30}
-print(formalisation_donnees(chemin_entree, distance_entree, temps_entree))
+print(formalisation_donnees(chemin_entree, distance_entree, temps_entree))'''
