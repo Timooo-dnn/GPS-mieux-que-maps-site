@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 from tqdm import tqdm
 import math
+import sqlite3
 
 warnings.filterwarnings("ignore")
 
@@ -361,6 +362,37 @@ if __name__ == "__main__":
     with open(CHEMIN_COORDS, "r", encoding="utf-8") as f:
         coords_data = json.load(f)
 
+    DB_FILE = r"src\data\sqlite\routes.db"
+
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS villes (
+        id TEXT PRIMARY KEY,
+        nom TEXT,
+        lat REAL,
+        lon REAL
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS routes (
+        from_id TEXT,
+        to_id TEXT,
+        distance_km REAL,
+        temps_min REAL,
+        vitesse_moy REAL,
+        autoroute INTEGER,
+        geometry TEXT,
+        PRIMARY KEY (from_id, to_id)
+    );
+    """)
+
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_routes_from ON routes(from_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_routes_to ON routes(to_id)")
+    conn.commit()
+
     print("Conversion des villes...")
     cities_data_list = []
     for city_id, info in tqdm(coords_data.items(), desc="Traitement JSON villes"):
@@ -410,6 +442,14 @@ if __name__ == "__main__":
             if succès:
                 villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
                 lien_succès = True
+                cur.execute("""
+                INSERT OR IGNORE INTO villes VALUES (?, ?, ?, ?)
+                """, (
+                    name,
+                    coords_data[name].get("nom_affichage", name),
+                    coords_data[name]["lat"],
+                    coords_data[name]["lon"]
+                ))
 
         if not lien_succès:
             best_node, real_dist = meilleur_noeud_fallback(point_ville, arbre, liste_noeud_validé, G)
@@ -417,13 +457,22 @@ if __name__ == "__main__":
             if best_node:
                 raccorde_ville_route(G, coords_villes, best_node, real_dist)
                 villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
+                cur.execute("""
+                INSERT OR IGNORE INTO villes VALUES (?, ?, ?, ?)
+                """, (
+                    name,
+                    coords_data[name].get("nom_affichage", name),
+                    coords_data[name]["lat"],
+                    coords_data[name]["lon"]
+                ))
             else:
                 print(f"Erreur critique : Impossible de raccorder {name}")
 
     # Calcul des itinéraires
     sortie = {}
     stats_succès, stats_échec = 0, 0
-
+    routes_buffer = []
+    
     for ville_nom, villes_voisines in tqdm(adj_data.items(), desc="Calcul Itinéraires"):
         if ville_nom not in villes_raccordées: 
             continue
@@ -473,11 +522,24 @@ if __name__ == "__main__":
                     "autoroute": sur_autoroute,
                     "path_geometry": listes_coords
                 })
+                routes_buffer.append((
+                    ville_nom,
+                    voisin_nom,
+                    round(dist_km, 2),
+                    round(total_temps / 60, 2),
+                    round(dist_km / (total_temps / 3600), 2) if total_temps > 0 else 0,
+                    int(sur_autoroute),
+                    json.dumps(listes_coords)
+                ))
                 stats_succès += 1
 
             except (nx.NetworkXNoPath, Exception):
                 stats_échec += 1
-
+    cur.executemany("""
+    INSERT OR REPLACE INTO routes VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, routes_buffer)
+    conn.commit()
+    conn.close()
     print(f"Terminé. Succès : {stats_succès}, Échecs : {stats_échec}")
     with open(CHEMIN_SORTIE, "w", encoding="utf-8") as f:
         json.dump(sortie, f, ensure_ascii=False, indent=4)

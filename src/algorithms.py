@@ -143,7 +143,7 @@ def formalisation_donnees(chemin,distance,temps):
 def test_formalisation():
     return formalisation_donnees(chemin_entree, distance_entree, temps_entree)
 
-chemin_entree = {'0': ['Toulouse', 'Blagnac', 'Aussonne']}
+chemin_entree = {'0': ['Toulouse_26686518', 'Blagnac_26691725', 'Beauzelle_26696473']}
 distance_entree = {'1-bis': 12, '0': 19, '1': 27}
 temps_entree = {'1-bis': 50, '0': 45, '1': 30}
 print(formalisation_donnees(chemin_entree, distance_entree, temps_entree))

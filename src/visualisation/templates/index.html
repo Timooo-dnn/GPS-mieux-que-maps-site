@@ -3,74 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon GPS A*</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input { padding: 8px; width: 100%; box-sizing: border-box; }
-        button { padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #218838; }
+    <title>GPS – Calcul d'itinéraire</title>
 
-        #resultat-brut {
-            background-color: #f4f4f4;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-top: 20px;
-            white-space: pre-wrap;
-            font-family: monospace;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
 
-    <h1>Recherche d'itinéraire (Test Backend)</h1>
+<header>
+    GPS – Calcul d’itinéraire (A*)
+</header>
 
-    <div class="input-group">
-        <label for="ville-depart">Ville de départ :</label>
-        <input type="text" id="ville-depart" placeholder="Ex: Paris">
+<div class="container">
+    
+    <div class="panel">
+        <h2>Itinéraire</h2>
+
+        <div class="input-group">
+            <label for="ville-depart">Départ</label>
+            <input type="text" id="ville-depart" placeholder="Ex : Toulouse">
+        </div>
+
+        <div class="input-group">
+            <label for="ville-arrivee">Arrivée</label>
+            <input type="text" id="ville-arrivee" placeholder="Ex : Aussonne">
+        </div>
+
+        <button onclick="lancerRecherche()">Démarrer</button>
+
+        <div class="info-box">
+            <h3>Données serveur</h3>
+            <pre id="resultat-brut">En attente...</pre>
+        </div>
     </div>
 
-    <div class="input-group">
-        <label for="ville-arrivee">Ville d'arrivée :</label>
-        <input type="text" id="ville-arrivee" placeholder="Ex: Lyon">
+    <div class="map-zone">
+        <div class="map-placeholder">
+            🗺️ Carte GPS (Leaflet / OpenStreetMap ça arrive, casser pas les burnes)
+        </div>
     </div>
 
-    <button onclick="lancerRecherche()">Calculer l'itinéraire</button>
+</div>
 
-    <h3>Réponse du serveur (Brut) :</h3>
-    <pre id="resultat-brut">En attente...</pre>
-
-    <script>
-        async function lancerRecherche() {
-            const depart = document.getElementById('ville-depart').value;
-            const arrivee = document.getElementById('ville-arrivee').value;
-            const zoneResultat = document.getElementById('resultat-brut');
-
-            if(!depart || !arrivee) {
-                alert("Merci de remplir les deux villes !");
-                return;
-            }
-
-            zoneResultat.innerText = "Chargement...";
-
-            try {
-                const reponse = await fetch('/api/calculer', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ depart: depart, arrivee: arrivee })
-                });
-
-                const donnees = await reponse.json();
-
-                zoneResultat.innerText = JSON.stringify(donnees, null, 4);
-
-            } catch (error) {
-                console.error('Erreur:', error);
-                zoneResultat.innerText = "Erreur lors de la communication avec le serveur.";
-            }
-        }
-    </script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
