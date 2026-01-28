@@ -1,5 +1,9 @@
 from map import maping
+from map import maping_test
+
 from localisation import localisation_ville
+from localisation import localisation_ville_test
+
 import math
 import numpy as np
 
@@ -62,11 +66,11 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
         if voisine not in chemin :
             voisines.append([voisine, distance_orthodromique(localisation_ville[voisine][0], localisation_ville[voisine][1], localisation_ville[villeA][0], localisation_ville[villeA][1])])
     voisinestri=trivoisines(voisines)
-    print(voisinestri)
-    for voisine in voisinestri[:3] :
+    for voisine in voisinestri[:2] :
         res = parcours_dist_orth(voisine, villeA, chemin+[voisine], dico)
         if villeA in res:
             liste.append(res)
+            print(ville)
             if len(dico)>1:
                 if type(dico[str(i)]) == list:
                     dico[str(i+1)+'-bis']=res
@@ -76,7 +80,7 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
 
     return(dico) # un chemin a été trouvé : remontée du résultat
 #print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
-print(parcours_dist_orth('Toulouse', 'Aussonne', ['Toulouse'], dico))
+print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
 
 '''
 ## Calcul des distances réelles avec le top 3 orthodromique
@@ -124,7 +128,7 @@ print(tri_temps_reel(dico))                         #return un dico trié en fon
 ## Formulation des données sorties sous format {Chemin}:[Distance_réelle],[Temps réel],[Booléen autoroute]
 
 ## Formulation des données sorties sous format sortie_formalisée=[{Chemin:[chemin]:[Distance_réelle],[Temps réel],[Booléen autoroute]}]
-
+'''
 def formalisation_donnees(chemin,distance,temps):
     sortie_formalisee = []
     for id_chemin in chemin:
@@ -144,3 +148,4 @@ def test_formalisation():
 chemin_entree = {'0': ['Toulouse_26686518', 'Blagnac_26691725', 'Beauzelle_26696473']}
 distance_entree = {'1-bis': 12, '0': 19, '1': 27}
 temps_entree = {'1-bis': 50, '0': 45, '1': 30}
+'''

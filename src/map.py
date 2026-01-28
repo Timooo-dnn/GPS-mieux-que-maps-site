@@ -4,7 +4,7 @@ V = "Voie rapide"
 N = "Nationale"
 D = "Départementale"
 
-maping = {
+maping_test = {
 "Toulouse":{
     "Blagnac":[10,A,True,4.6],
     "Colomiers":[15,N,False,10.0],
@@ -31,6 +31,6 @@ maping = {
 }
 }
 
-with open(r"src\data\dico_final.json",encoding="utf-8") as f:
-    maping1 = json.load(f)
+with open(r"GPS-mieux-que-maps\src\data\dico_final.json",encoding="utf-8") as f:
+    maping = json.load(f)
 
