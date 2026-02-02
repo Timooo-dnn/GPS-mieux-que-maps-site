@@ -88,10 +88,11 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
     return(chemin) # un chemin a été trouvé : remontée du résultat
 #print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
 #print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
-print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
-for i in range (len(liste)-1) :
-    dico[i]=liste[i]
-print(dico)
+#print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
+def liste_to_dico(liste) :
+    for i in range (len(liste)-1) :
+        dico[i]=liste[i]
+    return(dico)
 
 
 ## Calcul des distances réelles avec le top 3 orthodromique
