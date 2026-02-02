@@ -1,4 +1,5 @@
 import json
+import lien_file
 A= "Autoroute"
 V = "Voie rapide"
 N = "Nationale"
@@ -31,6 +32,6 @@ maping_test = {
 }
 }
 
-with open(r"src\data\dico_final.json",encoding="utf-8") as f:
+with open(lien_file.PATH_DICO_FINAL,encoding="utf-8") as f:
     maping = json.load(f)
 
