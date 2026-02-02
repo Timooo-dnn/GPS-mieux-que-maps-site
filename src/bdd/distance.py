@@ -10,6 +10,7 @@ import numpy as np
 from tqdm import tqdm
 import math
 import sqlite3
+from math import radians, sin, cos, sqrt, atan2
 
 warnings.filterwarnings("ignore")
 
@@ -67,6 +68,10 @@ POSSIBILITE_RACCORDEMENTS = {
 
 AUTOROUTES = ["motorway", "motorway_link"]
 
+# Pénalités pour optimiser le routage
+PENALITE_PETIT_VILLAGE = 1.5
+THRESHOLD_GRAND_CARREFOUR = 5
+
 # ================= FONCTIONS =================
 
 def vitesses(row): #Trouver vitesse associer
@@ -122,12 +127,22 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
     )
 
     gdf_arretes["speed_ms"] = (gdf_arretes["final_speed"] * gdf_arretes["coef_sinuosite"]) / 3.6
-    gdf_arretes["time"] = np.where(gdf_arretes["speed_ms"] > 0, gdf_arretes["weight"] / gdf_arretes["speed_ms"], math.inf)
+    
+    # Pénalité légère pour routes locales (moins directes)
+    gdf_arretes["penalite_locale"] = gdf_arretes["fclass"].apply(
+        lambda f: 1.0 if f in ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"] else 1.1
+    )
+    
+    gdf_arretes["time"] = np.where(
+        gdf_arretes["speed_ms"] > 0,
+        (gdf_arretes["weight"] / gdf_arretes["speed_ms"]) * gdf_arretes["penalite_locale"],
+        math.inf
+    )
     
     gdf_arretes["u"] = gdf_arretes.geometry.apply(lambda g: g.coords[0])
     gdf_arretes["v"] = gdf_arretes.geometry.apply(lambda g: g.coords[-1])
 
-    cols = ["u", "v", "weight", "time", "geometry", "fclass", "z_level"]
+    cols = ["u", "v", "weight", "time", "geometry", "fclass", "z_level", "penalite_locale"]
     
     routes_direct = gdf_arretes["oneway"].isin(["F", "B", "N", "False", None])
     arrete_direct = gdf_arretes.loc[routes_direct, cols].copy()
@@ -143,7 +158,8 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
     for _, row in tqdm(arretes_tot.iterrows(), total=len(arretes_tot), desc="Construction Graphe"):
         G.add_edge(row["u"], row["v"], 
                    weight=row["weight"], time=row["time"], 
-                   geometry=row["geometry"], fclass=row["fclass"], z_level=row["z_level"])
+                   geometry=row["geometry"], fclass=row["fclass"], z_level=row["z_level"],
+                   penalite_locale=row["penalite_locale"])
     
     if len(G) > 0:
         print("Nettoyage des routes isolées...")
@@ -181,7 +197,13 @@ def cherche_raccordement_villes_routes(point, gdf_arretes, spatial_index, G_node
         if row['z_level'] != 0:
             penalite_z = 5.0
 
+        # AMÉLIORÉ: Pénalité réduite pour les routes majeures (nationales, autoroutes)
+        routes_majeures = ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"]
         penalite_type_routes = POSSIBILITE_RACCORDEMENTS.get(row['fclass'], 2.0)
+        
+        # Bonus de 0.5x pour les routes majeures (plus attractives)
+        if row['fclass'] in routes_majeures:
+            penalite_type_routes *= 0.5
         
         score = row['dist_geom'] * penalite_type_routes * penalite_z
         
@@ -336,6 +358,30 @@ def meilleur_noeud_fallback(point_ville, arbre, liste_noeud, G, k_voisins=10): #
 
     return meilleur_noeud, distances[0]
 
+def distance_orthodromique(coord1, coord2):
+    """Calcule la distance orthodromique (vol d'oiseau) en mètres entre deux points en Lambert93"""
+    # Les coordonnées en Lambert93 sont en mètres, calcul simple
+    dx = coord2[0] - coord1[0]
+    dy = coord2[1] - coord1[1]
+    return math.sqrt(dx*dx + dy*dy)
+
+def nettoyer_boucles_chemin(chemin_noeuds):
+    """Supprime les boucles dans le chemin: si on repasse par un nœud, supprime le détour"""
+    if len(chemin_noeuds) <= 2:
+        return chemin_noeuds
+    
+    chemin_nettoyé = []
+    for noeud in chemin_noeuds:
+        if noeud in chemin_nettoyé:
+            # On repasse par ce nœud: supprimer le détour entre l'ancienne et nouvelle position
+            idx_ancien = chemin_nettoyé.index(noeud)
+            # Garder tout jusqu'à ce nœud et ignorer ce qu'il y a entre
+            chemin_nettoyé = chemin_nettoyé[:idx_ancien + 1]
+        else:
+            chemin_nettoyé.append(noeud)
+    
+    return chemin_nettoyé
+
 # ================= PRINCIPAL =================
 
 if __name__ == "__main__":
@@ -483,11 +529,19 @@ if __name__ == "__main__":
         for voisin_nom in villes_voisines:
             if voisin_nom not in villes_raccordées: 
                 continue
-            neoud_fin = villes_raccordées[voisin_nom]["node"]
+            noeud_fin = villes_raccordées[voisin_nom]["node"]
 
             try:
-                chemin_de_noeuds = nx.shortest_path(G, source=noeud_départ, target=neoud_fin, weight="time")
-
+                # 1. Calculer distance orthodromique (vol d'oiseau)
+                dist_ortho = distance_orthodromique(noeud_départ, noeud_fin)
+                
+                # 2. Chercher le chemin par routes
+                chemin_de_noeuds = nx.shortest_path(G, source=noeud_départ, target=noeud_fin, weight="time")
+                
+                # 3. Nettoyer les boucles
+                chemin_de_noeuds = nettoyer_boucles_chemin(chemin_de_noeuds)
+                
+                # 4. Calculer distance et temps réels
                 chemin_geom = []
                 total_dist, total_temps = 0, 0
                 sur_autoroute = False
@@ -495,6 +549,8 @@ if __name__ == "__main__":
                 for i in range(len(chemin_de_noeuds) - 1):
                     u, v = chemin_de_noeuds[i], chemin_de_noeuds[i+1]
                     arrete_data = G.get_edge_data(u, v)
+                    if arrete_data is None:
+                        continue
                     meilleur_k = min(arrete_data, key=lambda k: arrete_data[k]["time"])
                     data = arrete_data[meilleur_k]
 
@@ -502,6 +558,18 @@ if __name__ == "__main__":
                     total_dist += data["weight"]
                     total_temps += data["time"]
                     if data.get("fclass") in AUTOROUTES: sur_autoroute = True
+                
+                # 5. Si la distance par routes > 3x la distance orthodromique, utiliser la droite
+                if total_dist > 3 * dist_ortho:
+                    # Utiliser un lien direct entre les deux villes
+                    coord_depart = Point(noeud_départ)
+                    coord_fin = Point(noeud_fin)
+                    ligne_directe = LineString([coord_depart, coord_fin])
+                    
+                    total_dist = dist_ortho
+                    total_temps = dist_ortho / (80 / 3.6)  # Assumer 80 km/h en moyenne
+                    chemin_geom = [ligne_directe]
+                    sur_autoroute = False
 
                 ligne_route = linemerge(chemin_geom)
                 ligne_route_wgs84 = gpd.GeoSeries([ligne_route], crs="EPSG:2154").to_crs(epsg=4326).iloc[0]
