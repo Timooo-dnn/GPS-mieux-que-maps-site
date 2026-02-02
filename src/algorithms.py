@@ -88,25 +88,27 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
     return(chemin) # un chemin a été trouvé : remontée du résultat
 #print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
 #print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
-#print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
+parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico)
+    
 def liste_to_dico(liste) :
-    for i in range (len(liste)-1) :
+    for i in range (len(liste)) :
         dico[i]=liste[i]
     return(dico)
+dico_3_chemins_ortho=liste_to_dico(liste)
 
 
 ## Calcul des distances réelles avec le top 3 orthodromique
 
 def calculer_distance_reelle(tab):
     distance_reelle_totale = 0
-    for i in range(len(dico) - 1):
+    for i in range(len(tab) - 1):
         depart=tab[i]
         arrivee=tab[i+1]
         distance_pair=maping[depart][arrivee]
         km=distance_pair[0]
         distance_reelle_totale += km
-    return distance_reelle_totale
-print(calculer_distance_reelle(['Toulouse', 'Tournefeuille', 'Colomiers', 'Aussonne']))
+    return round(distance_reelle_totale, 2)
+calculer_distance_reelle(dico_3_chemins_ortho[0])
 
 ## Tri du top 3 distances réelles dans l'ordre croissant
 
@@ -116,16 +118,16 @@ def tris_distance_reelle(dico):
         res = calculer_distance_reelle(dico[cle])
         dico_res[cle]=res
     return dict(sorted(dico_res.items(), key=lambda item: item[1]))
-print(tris_distance_reelle(dico))
+tris_distance_reelle(dico_3_chemins_ortho)
 
 def extract_temps(tab):
     res=0
     villeD=tab[0]
     for ville in tab[1:]:
-        res+= maping[villeD][ville][3]
+        res+= maping[villeD][ville][1]
         villeD=ville
     return res                      #return un temps pour un chemin sous forme de [villeD, ville, ville, villeA]
-print(dico)
+extract_temps(dico_3_chemins_ortho[1])
 
 
 def tri_temps_reel(dico):
@@ -134,13 +136,11 @@ def tri_temps_reel(dico):
         res = extract_temps(dico[cle])
         dico_res[cle]=round(res, 2)
     return dict(sorted(dico_res.items(), key=lambda item: item[1]))
-print(tri_temps_reel(dico))                         #return un dico trié en fonction du temps sous forme {'0': 11.4, '1-bis': 15.0, '1': 18.0}
-'''
+tri_temps_reel(dico_3_chemins_ortho)                    #return un dico trié en fonction du temps sous forme {'0': 11.4, '1-bis': 15.0, '1': 18.0}
 
 ## Formulation des données sorties sous format {Chemin}:[Distance_réelle],[Temps réel],[Booléen autoroute]
 
 ## Formulation des données sorties sous format sortie_formalisée=[{Chemin:[chemin]:[Distance_réelle],[Temps réel],[Booléen autoroute]}]
-'''
 def formalisation_donnees(chemin,distance,temps):
     sortie_formalisee = []
     for id_chemin in chemin:
@@ -157,6 +157,8 @@ def formalisation_donnees(chemin,distance,temps):
 def test_formalisation():
     return formalisation_donnees(chemin_entree, distance_entree, temps_entree)
 
-chemin_entree = {'0': ['Toulouse_26686518', 'Blagnac_26691725', 'Beauzelle_26696473']}
-distance_entree = {'1-bis': 12, '0': 19, '1': 27}
-temps_entree = {'1-bis': 50, '0': 45, '1': 30}
+chemin_entree = dico_3_chemins_ortho
+distance_entree = tris_distance_reelle(dico_3_chemins_ortho)
+temps_entree = tri_temps_reel(dico_3_chemins_ortho)
+
+print(test_formalisation())
