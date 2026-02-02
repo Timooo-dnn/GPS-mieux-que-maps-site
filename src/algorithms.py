@@ -7,8 +7,8 @@ from localisation import localisation_ville_test
 import math
 import numpy as np
 
-User_Départ = document.getElementById('ville-depart').value;
-User_Destination = document.getElementById('ville-arrivee').value;
+User_Départ = "Toulouse_26686518"
+User_Destination = "Tarbes_26691527"
 
 
 ## Fonctionnement de l'algo:
