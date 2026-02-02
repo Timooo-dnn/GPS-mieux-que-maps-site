@@ -31,6 +31,6 @@ maping_test = {
 }
 }
 
-with open(r"GPS-mieux-que-maps\src\data\dico_final.json",encoding="utf-8") as f:
+with open(r"src/data/dico_final.json",encoding="utf-8") as f:
     maping = json.load(f)
 

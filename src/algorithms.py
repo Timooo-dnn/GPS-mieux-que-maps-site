@@ -56,14 +56,17 @@ def trivoisines(voisines):
 ## Trouver les 3 chemins les plus courts en distance orthodromique
 dico={}
 liste = []
+visited_global = set() # Ajout d'une mémoire globale des villes visitées
 
 def parcours_dist_orth(ville, villeA, chemin, dico):
     i=0
+    visited_global.add(ville) # Marquer la ville courante comme visitée
     if villeA in maping[ville]:
         return chemin+[villeA]        
     voisines=[]
     for voisine in maping[ville] :
-        if voisine not in chemin :
+        # Le problème est ici : on ne vérifiait que le chemin actuel, pas l'historique global
+        if voisine not in chemin and voisine not in visited_global:
             voisines.append([voisine, distance_orthodromique(localisation_ville[voisine][0], localisation_ville[voisine][1], localisation_ville[villeA][0], localisation_ville[villeA][1])])
     voisinestri=trivoisines(voisines)
     for voisine in voisinestri[:2] :
@@ -82,7 +85,7 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
 #print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
 print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
 
-'''
+
 ## Calcul des distances réelles avec le top 3 orthodromique
 
 def calculer_distance_reelle(tab):
@@ -148,4 +151,3 @@ def test_formalisation():
 chemin_entree = {'0': ['Toulouse_26686518', 'Blagnac_26691725', 'Beauzelle_26696473']}
 distance_entree = {'1-bis': 12, '0': 19, '1': 27}
 temps_entree = {'1-bis': 50, '0': 45, '1': 30}
-'''
