@@ -68,19 +68,27 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
     voisinestri=trivoisines(voisines)
     for voisine in voisinestri[:2] :
         res = parcours_dist_orth(voisine, villeA, chemin+[voisine], dico)
-        if villeA in res:
+        if res == "trouvé" : return "trouvé"
+        if villeA in res :
             liste.append(res)
-            print(ville)
+            #print(res)
+            if len(liste) >= 3 : return "trouvé"
+            """
             if len(dico)>1:
                 if type(dico[str(i)]) == list:
                     dico[str(i+1)+'-bis']=res
             else: 
                 dico[str(i)]=res
             i+=1
+            """
 
-    return(dico) # un chemin a été trouvé : remontée du résultat
+    return(chemin) # un chemin a été trouvé : remontée du résultat
+#print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
 #print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
 print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
+for i in range (len(liste)-1) :
+    dico[i]=liste[i]
+print(dico)
 
 '''
 ## Calcul des distances réelles avec le top 3 orthodromique
