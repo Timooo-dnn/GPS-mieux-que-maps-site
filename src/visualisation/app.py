@@ -1,11 +1,9 @@
-from flask import Flask, render_template, request, jsonify
 import sys
 import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from algorithms import test_formalisation
+from flask import Flask, render_template, request, jsonify
 from services.routes_geom import extraire_infos_itineraire
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from algorithms import test_formalisation
 
 app = Flask(__name__)
 
@@ -23,9 +21,7 @@ def calculer_itineraire():
         return jsonify({"erreur": "Veuillez remplir les deux villes"}), 400
 
     resultats = test_formalisation()
-
     chemin = resultats[0]["Chemin"]
-
     carto_data = extraire_infos_itineraire(chemin)
 
     return jsonify({
