@@ -7,6 +7,10 @@ from localisation import localisation_ville_test
 import math
 import numpy as np
 
+User_Départ = document.getElementById('ville-depart').value;
+User_Destination = document.getElementById('ville-arrivee').value;
+
+
 ## Fonctionnement de l'algo:
 #1. Entrée utilisateur : ville de départ, ville d'arrivée
 #2. Vérification si ville d'arrivée dans les voisines directes de la ville de départ
@@ -86,9 +90,8 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
             """
 
     return(chemin) # un chemin a été trouvé : remontée du résultat
-#print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
-#print(parcours_dist_orth('Toulouse_26686518', 'Tarbes_26691527', ['Toulouse_26686518'], dico))
-parcours_dist_orth('Tarbes_26691527', 'Toulouse_26686518', ['Tarbes_26691527'], dico)
+parcours_dist_orth(User_Départ, User_Destination, [User_Départ], dico)
+
     
 def liste_to_dico(liste) :
     for i in range (len(liste)) :
