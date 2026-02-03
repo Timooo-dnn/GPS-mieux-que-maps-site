@@ -10,7 +10,6 @@ import numpy as np
 from tqdm import tqdm
 import math
 import sqlite3
-from math import radians, sin, cos, sqrt, atan2
 
 warnings.filterwarnings("ignore")
 
@@ -162,10 +161,75 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
                    penalite_locale=row["penalite_locale"])
     
     if len(G) > 0:
-        print("Nettoyage des routes isolées...")
-        largest_cc = max(nx.weakly_connected_components(G), key=len)
-        G = G.subgraph(largest_cc).copy()
-        print(f"Graphe principal : {len(G.nodes)} nœuds.")
+        print("Traitement des composants isolés...")
+        
+        # Trouver tous les composants connexes faibles
+        composants = list(nx.weakly_connected_components(G))
+        composants_tries = sorted(composants, key=len, reverse=True)
+        
+        print(f"Total de {len(composants_tries)} composants détectés")
+        print(f"  - Composant principal : {len(composants_tries[0])} nœuds")
+        for i, comp in enumerate(composants_tries[1:], 1):
+            print(f"  - Composant {i} : {len(comp)} nœuds")
+        
+        # Garder le graphe complet mais ajouter des "ponts virtuels"
+        composant_principal = composants_tries[0]
+        
+        if len(composants_tries) > 1:
+            print("Création de ponts virtuels vers le composant principal...")
+            
+            def trouver_hub_composant(G, composant):
+                """Trouve le nœud-hub (degré sortant maximal) d'un composant"""
+                noeud_hub = None
+                max_degree = -1
+                for noeud in composant:
+                    degree = G.out_degree(noeud) + G.in_degree(noeud)
+                    if degree > max_degree:
+                        max_degree = degree
+                        noeud_hub = noeud
+                return noeud_hub if noeud_hub else next(iter(composant))
+            
+            # Hub du composant principal
+            hub_principal = trouver_hub_composant(G, composant_principal)
+            
+            # Traiter chaque composant isolé
+            for idx_comp, composant_isole in enumerate(composants_tries[1:], 1):
+                hub_isole = trouver_hub_composant(G, composant_isole)
+                
+                # Calculer distance euclidienne entre les deux hubs
+                hub_principal_coords = hub_principal
+                hub_isole_coords = hub_isole
+                
+                if isinstance(hub_principal_coords, tuple) and isinstance(hub_isole_coords, tuple):
+                    dx = hub_principal_coords[0] - hub_isole_coords[0]
+                    dy = hub_principal_coords[1] - hub_isole_coords[1]
+                    dist_euclidienne = math.sqrt(dx*dx + dy*dy)
+                else:
+                    dist_euclidienne = 5000  # Défaut si format inconnu
+                
+                # Créer un pont virtuel pondéré (coût majoré pour favoriser les routes réelles)
+                # Multiplier par 1.5 pour pénaliser l'utilisation du pont virtuel
+                poids_pont = dist_euclidienne * 1.5
+                temps_pont = poids_pont / (100 / 3.6)  # Assumer 100 km/h sur le pont virtuel
+                
+                # Créer la géométrie du pont
+                if isinstance(hub_principal_coords, tuple) and isinstance(hub_isole_coords, tuple):
+                    pont_geometry = LineString([hub_isole_coords, hub_principal_coords])
+                else:
+                    pont_geometry = LineString([(0, 0), (1, 1)])  # Fallback
+                
+                # Ajouter le pont virtuel bidirectionnel
+                G.add_edge(hub_isole, hub_principal, 
+                          weight=poids_pont, time=temps_pont, 
+                          geometry=pont_geometry, fclass="virtual_bridge", z_level=0, penalite_locale=1.5)
+                G.add_edge(hub_principal, hub_isole, 
+                          weight=poids_pont, time=temps_pont, 
+                          geometry=LineString(list(pont_geometry.coords)[::-1]), 
+                          fclass="virtual_bridge", z_level=0, penalite_locale=1.5)
+                
+                print(f"  → Pont virtuel créé : Composant {idx_comp} ({len(composant_isole)} nœuds) ↔ Principal")
+        
+        print(f"Graphe final : {len(G.nodes)} nœuds, {G.number_of_edges()} arêtes")
         
     return G
 
