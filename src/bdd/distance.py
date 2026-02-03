@@ -10,14 +10,15 @@ import numpy as np
 from tqdm import tqdm
 import math
 import sqlite3
+import lien_file
 
 warnings.filterwarnings("ignore")
 
 # ================= CONFIGURATION DES PARAMETRES =================
-CHEMIN_ROUTES = r"src\data\gis_osm_roads_free_1.shp"
-VILLES_ADJACENTS = r"src\data\adjacences_villes.json"
-CHEMIN_COORDS = r"src\data\coords_villes.json"
-CHEMIN_SORTIE = r"src\data\routes_villes_adj.json"
+CHEMIN_ROUTES = lien_file.PATH_ROUTES
+VILLES_ADJACENTS = lien_file.VILLES_ADJACENTS
+CHEMIN_COORDS = lien_file.CHEMIN_COORDS
+CHEMIN_SORTIE = lien_file.CHEMIN_SORTIE
 
 SIN_K = 1.5
 SIN_MIN = 0.4
