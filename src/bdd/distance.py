@@ -1,4 +1,4 @@
-#Démarrer le script : python -m src.bdd.distance
+#Démarrer le script : python3 -m src.bdd.distance
 
 import geopandas as gpd
 import pandas as pd
@@ -12,12 +12,12 @@ import numpy as np
 from tqdm import tqdm
 import math
 import sqlite3
-from ..lien_file import PATH_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
+from ..lien_file import PATH_SHP_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
 
 warnings.filterwarnings("ignore")
 
 # ================= CONFIGURATION DES PARAMETRES =================
-CHEMIN_ROUTES = PATH_ROUTES
+CHEMIN_ROUTES = PATH_SHP_ROUTES
 VILLES_ADJACENTS = VILLES_ADJACENTS
 CHEMIN_COORDS = CHEMIN_COORDS
 CHEMIN_SORTIE = CHEMIN_SORTIE
