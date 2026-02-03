@@ -1,4 +1,5 @@
 #Démarrer le script : python -m src.bdd.distance
+#Démarrer sur Mac : python3 -m src.bdd.distance
 
 import geopandas as gpd
 import pandas as pd
