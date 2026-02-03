@@ -1,0 +1,12 @@
+# Environnement virtuel
+venv/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# VS Code
+.vscode/
+/src/data/
+/src/lien_file.py
