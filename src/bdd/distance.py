@@ -10,15 +10,15 @@ import numpy as np
 from tqdm import tqdm
 import math
 import sqlite3
-import lien_file
+from src.lien_file import PATH_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
 
 warnings.filterwarnings("ignore")
 
 # ================= CONFIGURATION DES PARAMETRES =================
-CHEMIN_ROUTES = lien_file.PATH_ROUTES
-VILLES_ADJACENTS = lien_file.VILLES_ADJACENTS
-CHEMIN_COORDS = lien_file.CHEMIN_COORDS
-CHEMIN_SORTIE = lien_file.CHEMIN_SORTIE
+CHEMIN_ROUTES = PATH_ROUTES
+VILLES_ADJACENTS = VILLES_ADJACENTS
+CHEMIN_COORDS = CHEMIN_COORDS
+CHEMIN_SORTIE = CHEMIN_SORTIE
 
 SIN_K = 1.5
 SIN_MIN = 0.4
