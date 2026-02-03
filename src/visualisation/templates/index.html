@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS – Calcul d'itinéraire</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          crossorigin=""/>
+</head>
+
+<body>
+
+<header>
+    GPS – Calcul d’itinéraire (A*)
+</header>
+
+<div class="container">
+    
+    <div class="panel">
+        <h2>Itinéraire</h2>
+
+        <div class="input-group">
+            <label for="ville-depart">Départ</label>
+            <input type="text" id="ville-depart" placeholder="Ex : Toulouse">
+        </div>
+
+        <div class="input-group">
+            <label for="ville-arrivee">Arrivée</label>
+            <input type="text" id="ville-arrivee" placeholder="Ex : Aussonne">
+        </div>
+
+        <button onclick="lancerRecherche()">Démarrer</button>
+
+        <div class="info-box">
+            <h3>Données serveur</h3>
+            <pre id="resultat-brut">En attente...</pre>
+        </div>
+    </div>
+
+    <div class="map-zone">
+        <!-- CONTENEUR DE LA CARTE -->
+        <div id="map"></div>
+    </div>
+
+</div>
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<!-- JS principal -->
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+</body>
+</html>
