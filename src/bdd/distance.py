@@ -1,3 +1,5 @@
+#Démarrer le script : python -m src.bdd.distance
+
 import geopandas as gpd
 import pandas as pd
 import networkx as nx
@@ -10,7 +12,7 @@ import numpy as np
 from tqdm import tqdm
 import math
 import sqlite3
-from src.lien_file import PATH_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
+from ..lien_file import PATH_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
 
 warnings.filterwarnings("ignore")
 
