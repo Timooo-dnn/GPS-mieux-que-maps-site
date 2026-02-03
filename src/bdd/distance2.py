@@ -1,5 +1,5 @@
-#Démarrer le script : python -m src.bdd.distance
-#Démarrer sur Mac : python3 -m src.bdd.distance
+#Démarrer le script : python -m src.bdd.distance2
+#Démarrer sur Mac : python3 -m src.bdd.distance2
 
 import geopandas as gpd
 import pandas as pd
@@ -71,9 +71,16 @@ POSSIBILITE_RACCORDEMENTS = {
 }
 
 AUTOROUTES = ["motorway", "motorway_link"]
+ROUTES_MAJEURES = {"motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"}
 
+# Pénalités pour optimiser le routage
 PENALITE_PETIT_VILLAGE = 1.5
 THRESHOLD_GRAND_CARREFOUR = 5
+
+ATTRACTIVITE_ROUTE_FALLBACK = {
+    "motorway": 0.1, "trunk": 0.2, "primary": 0.3, "secondary": 0.5,
+    "tertiary": 0.8, "residential": 1.2, "service": 2.0, "track": 3.0, "connector": 10.0
+}
 
 # ================= FONCTIONS =================
 
@@ -131,6 +138,7 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
 
     gdf_arretes["speed_ms"] = (gdf_arretes["final_speed"] * gdf_arretes["coef_sinuosite"]) / 3.6
     
+    # Pénalité légère pour routes locales (moins directes)
     gdf_arretes["penalite_locale"] = gdf_arretes["fclass"].apply(
         lambda f: 1.0 if f in ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"] else 1.1
     )
@@ -165,7 +173,7 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
     
     if len(G) > 0:
         print("Traitement des composants isolés...")
-        
+
         composants = list(nx.weakly_connected_components(G))
         composants_tries = sorted(composants, key=len, reverse=True)
         
@@ -173,7 +181,7 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
         print(f"  - Composant principal : {len(composants_tries[0])} nœuds")
         for i, comp in enumerate(composants_tries[1:], 1):
             print(f"  - Composant {i} : {len(comp)} nœuds")
-        
+
         composant_principal = composants_tries[0]
         
         if len(composants_tries) > 1:
@@ -189,12 +197,12 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
                         max_degree = degree
                         noeud_hub = noeud
                 return noeud_hub if noeud_hub else next(iter(composant))
-            
+
             hub_principal = trouver_hub_composant(G, composant_principal)
-            
+
             for idx_comp, composant_isole in enumerate(composants_tries[1:], 1):
                 hub_isole = trouver_hub_composant(G, composant_isole)
-                
+
                 hub_principal_coords = hub_principal
                 hub_isole_coords = hub_isole
                 
@@ -204,15 +212,15 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
                     dist_euclidienne = math.sqrt(dx*dx + dy*dy)
                 else:
                     dist_euclidienne = 5000
-                
+
                 poids_pont = dist_euclidienne * 1.5
                 temps_pont = poids_pont / (100 / 3.6)
-                
+
                 if isinstance(hub_principal_coords, tuple) and isinstance(hub_isole_coords, tuple):
                     pont_geometry = LineString([hub_isole_coords, hub_principal_coords])
                 else:
                     pont_geometry = LineString([(0, 0), (1, 1)])
-                
+
                 G.add_edge(hub_isole, hub_principal, 
                           weight=poids_pont, time=temps_pont, 
                           geometry=pont_geometry, fclass="virtual_bridge", z_level=0, penalite_locale=1.5)
@@ -227,67 +235,76 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
         
     return G
 
-def cherche_raccordement_villes_routes(point, gdf_arretes, spatial_index, G_nodes_set, distance_max=3000): #Identifie le meilleur point d'ancrage pour chaque ville sur le graph précédent
-    rayon_3 = point.buffer(distance_max).bounds
-    routes_possibles = list(spatial_index.intersection(rayon_3))
+def cherche_raccordement_villes_routes(point, gdf_arretes, spatial_index, G_nodes_set, distance_max=3000):
+    x, y = point.x, point.y
+    bbox = (x - distance_max, y - distance_max, x + distance_max, y + distance_max)
     
-    if not routes_possibles:
+    routes_possibles_idx = list(spatial_index.intersection(bbox))
+    
+    if not routes_possibles_idx:
         return None
-
-    arretes_possibles = gdf_arretes.iloc[routes_possibles].copy()
     
-    arretes_possibles["dist_geom"] = arretes_possibles.geometry.distance(point)
-    arretes_possibles = arretes_possibles[arretes_possibles["dist_geom"] < distance_max]
+    arretes_possibles = gdf_arretes.iloc[routes_possibles_idx]
+    dists = arretes_possibles.geometry.distance(point)
+    mask = dists < distance_max
     
-    if arretes_possibles.empty:
+    if not mask.any():
         return None
-
-    meilleur_routes = None
+        
+    candidates = arretes_possibles[mask]
+    candidate_dists = dists[mask]
+    
+    meilleur_routes_data = None
     meilleur_score = float('inf')
 
-    for idx, row in arretes_possibles.iterrows():
-        u, v = row['u'], row['v']
+    for row, dist_geom in zip(candidates.itertuples(index=False), candidate_dists):
+        u, v = row.u, row.v
         
         if u not in G_nodes_set and v not in G_nodes_set:
             continue
             
-        penalite_z = 1.0
-        if row['z_level'] != 0:
-            penalite_z = 5.0
+        penalite_z = 5.0 if row.z_level != 0 else 1.0
 
-        routes_majeures = ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"]
-        penalite_type_routes = POSSIBILITE_RACCORDEMENTS.get(row['fclass'], 2.0)
+        fclass = row.fclass
+        penalite_type_routes = POSSIBILITE_RACCORDEMENTS.get(fclass, 2.0)
         
-        if row['fclass'] in routes_majeures:
+        if fclass in ROUTES_MAJEURES:
             penalite_type_routes *= 0.5
         
-        score = row['dist_geom'] * penalite_type_routes * penalite_z
+        score = dist_geom * penalite_type_routes * penalite_z
         
         if score < meilleur_score:
             meilleur_score = score
             geom = row.geometry
             dist_along = geom.project(point)
-            dist_along = max(0, min(geom.length, dist_along))
+            dist_along = max(0, min(geom.length, dist_along)) # Clamp
             proj_pt = geom.interpolate(dist_along)
-            
-            meilleur_routes = {
-                'arrete': (u, v),
-                'données_arretes': row.drop(['u', 'v', 'dist_geom']).to_dict(),
-                'projection_point': proj_pt,
-                'distance': row['dist_geom'],
-                'coordonnées_projetes': (proj_pt.x, proj_pt.y)
-            }
+            meilleur_routes_data = (row, proj_pt, dist_geom, dist_along)
 
-    return meilleur_routes
+    if meilleur_routes_data:
+        best_row, proj_pt, dist_geom, dist_along = meilleur_routes_data
+        data_dict = best_row._asdict()
+        del data_dict['u']
+        del data_dict['v']
+        
+        return {
+            'arrete': (best_row.u, best_row.v),
+            'données_arretes': data_dict,
+            'projection_point': proj_pt,
+            'distance': dist_geom,
+            'coordonnées_projetes': (proj_pt.x, proj_pt.y),
+            'dist_along': dist_along
+        }
 
-def insert_projected_point_in_graph(G, tree, listes_noeud, arrete_infos, point_villes, coord_villes): #Crée une intersection la ou le meilleur point d'ancrage a été identifié
+    return None
+
+def insert_projected_point_in_graph(G, tree, listes_noeud, arrete_infos, point_villes, coord_villes):
     if arrete_infos is None:
         return None, False
     
     u, v = arrete_infos['arrete']
     données_arretes = arrete_infos['données_arretes']
     coordonnées_projetes = arrete_infos['coordonnées_projetes']
-    projection_point = arrete_infos['projection_point']
     
     distance, idx = tree.query([coordonnées_projetes[0], coordonnées_projetes[1]], k=1)
     
@@ -295,57 +312,80 @@ def insert_projected_point_in_graph(G, tree, listes_noeud, arrete_infos, point_v
         neoud_projeté = listes_noeud[idx]
     else:
         neoud_projeté = coordonnées_projetes
-
         geometrie_original = données_arretes['geometry']
-        distance_afaire = geometrie_original.project(projection_point)
+        
+        if 'dist_along' in arrete_infos:
+            distance_afaire = arrete_infos['dist_along']
+        else:
+            projection_point = arrete_infos['projection_point']
+            distance_afaire = geometrie_original.project(projection_point)
+            
         liste_coordonnées = list(geometrie_original.coords)
         
         distance_tot = 0
         insertion_index = 1
+        found = False
+        
         for i in range(len(liste_coordonnées) - 1):
-            p1, p2 = Point(liste_coordonnées[i]), Point(liste_coordonnées[i+1])
-            d = p1.distance(p2)
+            p1 = liste_coordonnées[i]
+            p2 = liste_coordonnées[i+1]
+            d = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+            
             if distance_tot <= distance_afaire <= distance_tot + d + 0.01:
                 insertion_index = i + 1
+                found = True
                 break
             distance_tot += d
         
+        if not found:
+            insertion_index = len(liste_coordonnées) - 1
+
         coords_ap = liste_coordonnées[:insertion_index] + [coordonnées_projetes]
         coords_pb = [coordonnées_projetes] + liste_coordonnées[insertion_index:]
         
         seg_ap = LineString(coords_ap)
         seg_pb = LineString(coords_pb)
         
-        def data_routes_créé(geom, orig_w, orig_t):
-            ratio = geom.length / orig_w if orig_w > 0 else 0
-            return geom.length, orig_t * ratio
+        orig_w = données_arretes['weight']
+        orig_t = données_arretes['time']
+        def get_w_t(geom):
+            l = geom.length
+            ratio = l / orig_w if orig_w > 0 else 0
+            return l, orig_t * ratio
 
-        w_ap, t_ap = data_routes_créé(seg_ap, données_arretes['weight'], données_arretes['time'])
-        w_pb, t_pb = data_routes_créé(seg_pb, données_arretes['weight'], données_arretes['time'])
+        w_ap, t_ap = get_w_t(seg_ap)
+        w_pb, t_pb = get_w_t(seg_pb)
 
         if G.has_edge(u, v):
             G.remove_edge(u, v)
             
-        G.add_edge(u, neoud_projeté, weight=w_ap, time=t_ap, geometry=seg_ap, 
-                   fclass=données_arretes['fclass'], z_level=données_arretes.get('z_level', 0))
-        G.add_edge(neoud_projeté, v, weight=w_pb, time=t_pb, geometry=seg_pb, 
-                   fclass=données_arretes['fclass'], z_level=données_arretes.get('z_level', 0))
+        base_attrs = données_arretes.copy()
+        for k in ['geometry', 'weight', 'time']:
+            base_attrs.pop(k, None) 
+        G.add_edge(u, neoud_projeté, weight=w_ap, time=t_ap, geometry=seg_ap, **base_attrs)
+        G.add_edge(neoud_projeté, v, weight=w_pb, time=t_pb, geometry=seg_pb, **base_attrs)
 
-        sens_inverse = G.get_edge_data(v, u)
-        if sens_inverse:
-            keys = list(sens_inverse.keys())
+        # Gestion sens inverse
+        if G.has_edge(v, u):
+            sens_inverse_data = G.get_edge_data(v, u)
+            keys = list(sens_inverse_data.keys())
             for k in keys:
-                données_sens_inverse = sens_inverse[k]
-                if 'geometry' in données_sens_inverse:
-                    G.remove_edge(v, u, key=k)
-                    G.add_edge(v, neoud_projeté, weight=w_pb, time=t_pb, 
-                               geometry=LineString(list(seg_pb.coords)[::-1]),
-                               fclass=données_sens_inverse['fclass'], z_level=données_sens_inverse.get('z_level', 0))
-                    G.add_edge(neoud_projeté, u, weight=w_ap, time=t_ap, 
-                               geometry=LineString(list(seg_ap.coords)[::-1]),
-                               fclass=données_sens_inverse['fclass'], z_level=données_sens_inverse.get('z_level', 0))
+                d_inv = sens_inverse_data[k]
+                if 'geometry' in d_inv:
+                     G.remove_edge(v, u, key=k)
+                     
+                     inv_attrs = d_inv.copy()
+                     inv_attrs.pop('geometry', None)
+                     
+                     inv_attrs['weight'] = w_pb
+                     inv_attrs['time'] = t_pb
+                     G.add_edge(v, neoud_projeté, geometry=LineString(list(seg_pb.coords)[::-1]), **inv_attrs)
+                     
+                     inv_attrs['weight'] = w_ap
+                     inv_attrs['time'] = t_ap
+                     G.add_edge(neoud_projeté, u, geometry=LineString(list(seg_ap.coords)[::-1]), **inv_attrs)
 
-    villes_a_projeté = LineString([point_villes, projection_point])
+    villes_a_projeté = LineString([point_villes, Point(neoud_projeté)])
     dist_v = villes_a_projeté.length
     time_v = dist_v / (30/3.6)
     
@@ -356,54 +396,49 @@ def insert_projected_point_in_graph(G, tree, listes_noeud, arrete_infos, point_v
     
     return neoud_projeté, True
 
-def raccorde_ville_route(G, coord_villes, coord_villes_projeté, distance_m): #Crée le lien (D/I) entre la nouvelle intersection et la ville
+def raccorde_ville_route(G, coord_villes, coord_villes_projeté, distance_m):
     temps_s = distance_m / (30 / 3.6)
-    
-    geom_ville_vers_route= LineString([coord_villes, coord_villes_projeté])
-    geom_route_vers_ville = LineString([coord_villes, coord_villes_projeté])
+
+    geom_connexion = LineString([coord_villes, coord_villes_projeté])
+    geom_inverse = LineString([coord_villes_projeté, coord_villes])
     
     G.add_edge(coord_villes, coord_villes_projeté, 
                weight=distance_m, time=temps_s, 
-               geometry=geom_ville_vers_route, fclass="connector", z_level=0)
+               geometry=geom_connexion, fclass="connector", z_level=0)
 
     G.add_edge(coord_villes_projeté, coord_villes, 
                weight=distance_m, time=temps_s, 
-               geometry=geom_route_vers_ville, fclass="connector", z_level=0)
+               geometry=geom_inverse, fclass="connector", z_level=0)
 
-def meilleur_noeud_fallback(point_ville, arbre, liste_noeud, G, k_voisins=10): #Si aucune route n'est trouvé précédemment, on utilise le noeud le plus logique autour de la ville
+def meilleur_noeud_fallback(point_ville, arbre, liste_noeud, G, k_voisins=10):
     coords_ville = (point_ville.x, point_ville.y)
     distances, indices = arbre.query([coords_ville[0], coords_ville[1]], k=k_voisins)
     
     meilleur_noeud = None
     meilleur_score = float('inf')
 
-    attractivité_route = {
-        "motorway": 0.1,
-        "trunk": 0.2,
-        "primary": 0.3,
-        "secondary": 0.5,
-        "tertiary": 0.8,
-        "residential": 1.2,
-        "service": 2.0,
-        "track": 3.0,
-        "connector": 10.0
-    }
-
     for dist, idx in zip(distances, indices):
         neoud = liste_noeud[idx]
         
-        arrtes = G.edges(neoud, data=True)
-        if not arrtes:
+        if not G.has_node(neoud): 
             continue
-            
-        meilleur_fclass = "service"
-        classes_found = [data.get("fclass") for _, _, data in arrtes]
-        
+        voisins = G[neoud]
+        if not voisins:
+            continue
+
         coeff_actuel = 5.0
-        for f in classes_found:
-            coeff = attractivité_route.get(f, 2.0)
-            if coeff < coeff_actuel:
-                coeff_actuel = coeff
+        
+        for nbr, edge_data in voisins.items():
+            if isinstance(G, (type(None),)):
+                pass 
+            
+            datas_to_check = edge_data.values() if G.is_multigraph() else [edge_data]
+            
+            for data in datas_to_check:
+                f = data.get("fclass")
+                coeff = ATTRACTIVITE_ROUTE_FALLBACK.get(f, 2.0)
+                if coeff < coeff_actuel:
+                    coeff_actuel = coeff
         
         score = dist * coeff_actuel
         
@@ -411,16 +446,15 @@ def meilleur_noeud_fallback(point_ville, arbre, liste_noeud, G, k_voisins=10): #
             meilleur_score = score
             meilleur_noeud = neoud
 
-    return meilleur_noeud, distances[0]
+    real_dist = distances[0] if len(distances) > 0 else 0
+    return meilleur_noeud, real_dist
 
 def distance_orthodromique(coord1, coord2):
-    """Calcule la distance orthodromique (vol d'oiseau) en mètres entre deux points en Lambert93"""
     dx = coord2[0] - coord1[0]
     dy = coord2[1] - coord1[1]
     return math.sqrt(dx*dx + dy*dy)
 
 def nettoyer_boucles_chemin(chemin_noeuds):
-    """Supprime les boucles dans le chemin: si on repasse par un nœud, supprime le détour"""
     if len(chemin_noeuds) <= 2:
         return chemin_noeuds
     
@@ -537,7 +571,7 @@ if __name__ == "__main__":
                 G, arbre, liste_noeud_validé, info_arrete, point_ville, coords_villes
             )
             raccordé = succès
-        
+
         if not raccordé:
             best_node, real_dist = meilleur_noeud_fallback(point_ville, arbre, liste_noeud_validé, G)
             if best_node:
@@ -545,7 +579,7 @@ if __name__ == "__main__":
                 raccordé = True
             else:
                 print(f"Erreur critique : Impossible de raccorder {name}")
-        
+
         if raccordé:
             villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
             villes_buffer.append((
@@ -554,7 +588,7 @@ if __name__ == "__main__":
                 coords_data[name]["lat"],
                 coords_data[name]["lon"]
             ))
-    
+
     if villes_buffer:
         cur.executemany("""
         INSERT OR IGNORE INTO villes VALUES (?, ?, ?, ?)
