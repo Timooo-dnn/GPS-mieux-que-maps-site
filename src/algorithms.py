@@ -109,9 +109,7 @@ def calculer_distance_reelle(tab):
         arrivee=tab[i+1]
         distance_pair=maping[depart][arrivee]
         km=distance_pair[0]
-        print("La distance entre", depart, "et", arrivee, "est de", km)
         distance_reelle_totale += km
-        print(distance_reelle_totale)
     return round(distance_reelle_totale, 2)
 calculer_distance_reelle(dico_3_chemins_ortho[0])
 
@@ -123,10 +121,8 @@ def tris_distance_reelle(dico):
     for cle in dico:
         res = calculer_distance_reelle(dico[cle])
         dico_res[cle]=res
-        print(dico_res)
-        print(res)
     return dict(sorted(dico_res.items(), key=lambda item: item[1]))
-print(tris_distance_reelle(dico_3_chemins_ortho))
+tris_distance_reelle(dico_3_chemins_ortho)
 
 ## Calcul des temps réels)
 def extract_temps(tab):
@@ -170,4 +166,4 @@ chemin_entree = dico_3_chemins_ortho
 distance_entree = tris_distance_reelle(dico_3_chemins_ortho)
 temps_entree = tri_temps_reel(dico_3_chemins_ortho)
 
-print(test_formalisation())
+test_formalisation()
