@@ -297,5 +297,5 @@ def api_calcul():
         return jsonify({'erreur': str(e)}), 500
 
 if __name__ == '__main__':
-    print("🚀 Serveur lancé : http://127.0.0.1:5001")
-    app.run(debug=True, port=5001)
+    print("🚀 Serveur lancé : http://127.0.0.1:5000")
+    app.run(debug=True, port=5000)
