@@ -22,6 +22,23 @@ User_Destination = "Tarbes_26691527"
 #8. Trie du plus rapide au plus lent chemin en temps réelle
 #9. Affichage des résultats
 
+def calculer_itineraire(ville_depart, ville_destination):
+    global visited_global, liste, dico
+    
+    visited_global = set()
+    liste = []
+    dico = {}
+    
+    parcours_dist_orth(ville_depart, ville_destination, [ville_depart], dico)
+    
+    dico_3_chemins = liste_to_dico(liste)
+    
+    distance_entree = tris_distance_reelle(dico_3_chemins)
+    temps_entree = tri_temps_reel(dico_3_chemins)
+    
+    # Retourner les résultats formatés
+    return formalisation_donnees(dico_3_chemins, distance_entree, temps_entree)
+
 ## Calcul Othodromique entre 2 points
 def distance_orthodromique(lat1, lng1, lat2, lng2) :
     # angles en degrés
@@ -92,7 +109,6 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
     return(chemin) # un chemin a été trouvé : remontée du résultat
 parcours_dist_orth(User_Départ, User_Destination, [User_Départ], dico)
 
-    
 def liste_to_dico(liste) :
     for i in range (len(liste)) :
         dico[i]=liste[i]

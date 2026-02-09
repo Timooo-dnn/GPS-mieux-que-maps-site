@@ -51,7 +51,7 @@ for i, row in gdf_villes_proj.iterrows():
 print("Extraction des adjacences par routes majeures...")
 for idx, route_row in tqdm(gdf_majeures_exploded.iterrows(), total=len(gdf_majeures_exploded), desc="Routes"):
     route_geom = route_row.geometry
-    villes_route = villes_sur_route(route_geom, gdf_villes_proj, buffer_m=1500)
+    villes_route = villes_sur_route(route_geom, gdf_villes_proj, buffer_m=5000)
     
     if len(villes_route) >= 2:
         for ville_idx in villes_route:
