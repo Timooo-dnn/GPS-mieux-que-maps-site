@@ -1,14 +1,9 @@
 from map import maping
 from map import maping_test
-
 from localisation import localisation_ville
 from localisation import localisation_ville_test
-
 import math
 import numpy as np
-
-User_Départ = "Toulouse_26686518"
-User_Destination = "Tarbes_26691527"
 
 
 ## Fonctionnement de l'algo:
@@ -21,6 +16,22 @@ User_Destination = "Tarbes_26691527"
 #7. Calcul du temps réelle pour chaque chemin (en prenant en compte la vitesse moyenne des routes entre chaque)
 #8. Trie du plus rapide au plus lent chemin en temps réelle
 #9. Affichage des résultats
+
+def calculer_itineraire(ville_depart, ville_destination):
+    global visited_global, liste, dico
+    
+    visited_global = set()
+    liste = []
+    dico = {}
+    
+    parcours_dist_orth(ville_depart, ville_destination, [ville_depart], dico)
+    dico_3_chemins = liste_to_dico(liste)
+    
+    distance_entree = tris_distance_reelle(dico_3_chemins)
+    temps_entree = tri_temps_reel(dico_3_chemins)
+    
+    # Retourner les résultats formatés
+    return formalisation_donnees(dico_3_chemins, distance_entree, temps_entree)
 
 ## Calcul Othodromique entre 2 points
 def distance_orthodromique(lat1, lng1, lat2, lng2) :
@@ -73,31 +84,18 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
         if voisine not in chemin and voisine not in visited_global:
             voisines.append([voisine, distance_orthodromique(localisation_ville[voisine][0], localisation_ville[voisine][1], localisation_ville[villeA][0], localisation_ville[villeA][1])])
     voisinestri=trivoisines(voisines)
-    for voisine in voisinestri[:2] :
+    for voisine in voisinestri[:3] :
         res = parcours_dist_orth(voisine, villeA, chemin+[voisine], dico)
         if res == "trouvé" : return "trouvé"
         if villeA in res :
             liste.append(res)
-            #print(res)
-            if len(liste) >= 3 : return "trouvé"
-            """
-            if len(dico)>1:
-                if type(dico[str(i)]) == list:
-                    dico[str(i+1)+'-bis']=res
-            else: 
-                dico[str(i)]=res
-            i+=1
-            """
-
+            if len(liste) >= 4 : return "trouvé"
     return(chemin) # un chemin a été trouvé : remontée du résultat
-parcours_dist_orth(User_Départ, User_Destination, [User_Départ], dico)
 
 def liste_to_dico(liste) :
     for i in range (len(liste)) :
         dico[i]=liste[i]
     return(dico)
-dico_3_chemins_ortho=liste_to_dico(liste)
-
 
 ## Calcul des distances réelles avec le top 3 orthodromique
 
@@ -110,8 +108,6 @@ def calculer_distance_reelle(tab):
         km=distance_pair[0]
         distance_reelle_totale += km
     return round(distance_reelle_totale, 2)
-calculer_distance_reelle(dico_3_chemins_ortho[0])
-
 
 ## Tri du top 3 distances réelles dans l'ordre croissant
 
@@ -121,7 +117,6 @@ def tris_distance_reelle(dico):
         res = calculer_distance_reelle(dico[cle])
         dico_res[cle]=res
     return dict(sorted(dico_res.items(), key=lambda item: item[1]))
-tris_distance_reelle(dico_3_chemins_ortho)
 
 ## Calcul des temps réels)
 def extract_temps(tab):
@@ -131,16 +126,13 @@ def extract_temps(tab):
         res+= maping[villeD][ville][1]
         villeD=ville
     return res                      #return un temps pour un chemin sous forme de [villeD, ville, ville, villeA]
-extract_temps(dico_3_chemins_ortho[1])
-
 
 def tri_temps_reel(dico):
     dico_res={}
     for cle in dico:
         res = extract_temps(dico[cle])
         dico_res[cle]=round(res, 2)
-    return dict(sorted(dico_res.items(), key=lambda item: item[1]))
-tri_temps_reel(dico_3_chemins_ortho)                    #return un dico trié en fonction du temps sous forme {'0': 11.4, '1-bis': 15.0, '1': 18.0}
+    return dict(sorted(dico_res.items(), key=lambda item: item[1]))                #return un dico trié en fonction du temps sous forme {'0': 11.4, '1-bis': 15.0, '1': 18.0}
 
 ## Formulation des données sorties sous format {Chemin}:[Distance_réelle],[Temps réel],[Booléen autoroute]
 
@@ -157,21 +149,3 @@ def formalisation_donnees(chemin,distance,temps):
         }
         sortie_formalisee.append(donnees_chemin)
     return sortie_formalisee
-
-def test_formalisation():
-    return formalisation_donnees(chemin_entree, distance_entree, temps_entree)
-
-def calculer_itineraire(ville_depart, ville_arrivee):
-    global liste, visited_global, dico
-    liste = []
-    visited_global = set()
-    dico = {}
-    
-    parcours_dist_orth(ville_depart, ville_arrivee, [ville_depart], dico)
-    dico_3_chemins = liste_to_dico(liste)
-    
-    chemin = dico_3_chemins
-    distance = tris_distance_reelle(dico_3_chemins)
-    temps = tri_temps_reel(dico_3_chemins)
-    
-    return formalisation_donnees(chemin, distance, temps)
