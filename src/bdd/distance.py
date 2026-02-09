@@ -1,6 +1,3 @@
-#Démarrer le script : python -m src.bdd.distance
-#Démarrer sur Mac : python3 -m src.bdd.distance
-
 import geopandas as gpd
 import pandas as pd
 import networkx as nx
@@ -9,13 +6,11 @@ from shapely.geometry import Point, LineString
 from shapely.ops import linemerge
 from scipy.spatial import cKDTree
 import warnings
-from pyproj import Transformer
 import numpy as np
 from tqdm import tqdm
 import math
 import sqlite3
 from ..lien_file import PATH_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
-
 warnings.filterwarnings("ignore")
 
 # ================= CONFIGURATION DES PARAMETRES =================
@@ -72,6 +67,7 @@ POSSIBILITE_RACCORDEMENTS = {
 
 AUTOROUTES = ["motorway", "motorway_link"]
 
+# Pénalités pour optimiser le routage
 PENALITE_PETIT_VILLAGE = 1.5
 THRESHOLD_GRAND_CARREFOUR = 5
 
@@ -131,6 +127,7 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
 
     gdf_arretes["speed_ms"] = (gdf_arretes["final_speed"] * gdf_arretes["coef_sinuosite"]) / 3.6
     
+    # Pénalité légère pour routes locales (moins directes)
     gdf_arretes["penalite_locale"] = gdf_arretes["fclass"].apply(
         lambda f: 1.0 if f in ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"] else 1.1
     )
@@ -164,66 +161,10 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
                    penalite_locale=row["penalite_locale"])
     
     if len(G) > 0:
-        print("Traitement des composants isolés...")
-        
-        composants = list(nx.weakly_connected_components(G))
-        composants_tries = sorted(composants, key=len, reverse=True)
-        
-        print(f"Total de {len(composants_tries)} composants détectés")
-        print(f"  - Composant principal : {len(composants_tries[0])} nœuds")
-        for i, comp in enumerate(composants_tries[1:], 1):
-            print(f"  - Composant {i} : {len(comp)} nœuds")
-        
-        composant_principal = composants_tries[0]
-        
-        if len(composants_tries) > 1:
-            print("Création de ponts virtuels vers le composant principal...")
-            
-            def trouver_hub_composant(G, composant):
-                """Trouve le nœud-hub (degré sortant maximal) d'un composant"""
-                noeud_hub = None
-                max_degree = -1
-                for noeud in composant:
-                    degree = G.out_degree(noeud) + G.in_degree(noeud)
-                    if degree > max_degree:
-                        max_degree = degree
-                        noeud_hub = noeud
-                return noeud_hub if noeud_hub else next(iter(composant))
-            
-            hub_principal = trouver_hub_composant(G, composant_principal)
-            
-            for idx_comp, composant_isole in enumerate(composants_tries[1:], 1):
-                hub_isole = trouver_hub_composant(G, composant_isole)
-                
-                hub_principal_coords = hub_principal
-                hub_isole_coords = hub_isole
-                
-                if isinstance(hub_principal_coords, tuple) and isinstance(hub_isole_coords, tuple):
-                    dx = hub_principal_coords[0] - hub_isole_coords[0]
-                    dy = hub_principal_coords[1] - hub_isole_coords[1]
-                    dist_euclidienne = math.sqrt(dx*dx + dy*dy)
-                else:
-                    dist_euclidienne = 5000
-                
-                poids_pont = dist_euclidienne * 1.5
-                temps_pont = poids_pont / (100 / 3.6)
-                
-                if isinstance(hub_principal_coords, tuple) and isinstance(hub_isole_coords, tuple):
-                    pont_geometry = LineString([hub_isole_coords, hub_principal_coords])
-                else:
-                    pont_geometry = LineString([(0, 0), (1, 1)])
-                
-                G.add_edge(hub_isole, hub_principal, 
-                          weight=poids_pont, time=temps_pont, 
-                          geometry=pont_geometry, fclass="virtual_bridge", z_level=0, penalite_locale=1.5)
-                G.add_edge(hub_principal, hub_isole, 
-                          weight=poids_pont, time=temps_pont, 
-                          geometry=LineString(list(pont_geometry.coords)[::-1]), 
-                          fclass="virtual_bridge", z_level=0, penalite_locale=1.5)
-                
-                print(f"  → Pont virtuel créé : Composant {idx_comp} ({len(composant_isole)} nœuds) ↔ Principal")
-        
-        print(f"Graphe final : {len(G.nodes)} nœuds, {G.number_of_edges()} arêtes")
+        print("Nettoyage des routes isolées...")
+        largest_cc = max(nx.weakly_connected_components(G), key=len)
+        G = G.subgraph(largest_cc).copy()
+        print(f"Graphe principal : {len(G.nodes)} nœuds.")
         
     return G
 
@@ -255,9 +196,11 @@ def cherche_raccordement_villes_routes(point, gdf_arretes, spatial_index, G_node
         if row['z_level'] != 0:
             penalite_z = 5.0
 
+        # AMÉLIORÉ: Pénalité réduite pour les routes majeures (nationales, autoroutes)
         routes_majeures = ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"]
         penalite_type_routes = POSSIBILITE_RACCORDEMENTS.get(row['fclass'], 2.0)
         
+        # Bonus de 0.5x pour les routes majeures (plus attractives)
         if row['fclass'] in routes_majeures:
             penalite_type_routes *= 0.5
         
@@ -300,6 +243,7 @@ def insert_projected_point_in_graph(G, tree, listes_noeud, arrete_infos, point_v
         distance_afaire = geometrie_original.project(projection_point)
         liste_coordonnées = list(geometrie_original.coords)
         
+        # Trouver l'index d'insertion
         distance_tot = 0
         insertion_index = 1
         for i in range(len(liste_coordonnées) - 1):
@@ -415,6 +359,7 @@ def meilleur_noeud_fallback(point_ville, arbre, liste_noeud, G, k_voisins=10): #
 
 def distance_orthodromique(coord1, coord2):
     """Calcule la distance orthodromique (vol d'oiseau) en mètres entre deux points en Lambert93"""
+    # Les coordonnées en Lambert93 sont en mètres, calcul simple
     dx = coord2[0] - coord1[0]
     dy = coord2[1] - coord1[1]
     return math.sqrt(dx*dx + dy*dy)
@@ -427,7 +372,9 @@ def nettoyer_boucles_chemin(chemin_noeuds):
     chemin_nettoyé = []
     for noeud in chemin_noeuds:
         if noeud in chemin_nettoyé:
+            # On repasse par ce nœud: supprimer le détour entre l'ancienne et nouvelle position
             idx_ancien = chemin_nettoyé.index(noeud)
+            # Garder tout jusqu'à ce nœud et ignorer ce qu'il y a entre
             chemin_nettoyé = chemin_nettoyé[:idx_ancien + 1]
         else:
             chemin_nettoyé.append(noeud)
@@ -453,7 +400,6 @@ if __name__ == "__main__":
 
     print("Reprojection des routes...")
     gdf_proj = gdf.to_crs(epsg=2154)
-    transformer = Transformer.from_crs("EPSG:2154", "EPSG:4326", always_xy=True)
 
     print("Chargement JSON villes...")
     with open(VILLES_ADJACENTS, "r", encoding="utf-8") as f:
@@ -483,6 +429,7 @@ if __name__ == "__main__":
         temps_min REAL,
         vitesse_moy REAL,
         autoroute INTEGER,
+        tire_droit INTEGER,
         geometry TEXT,
         PRIMARY KEY (from_id, to_id)
     );
@@ -505,11 +452,13 @@ if __name__ == "__main__":
     villes_gdf = gpd.GeoDataFrame(cities_data_list, crs="EPSG:4326").to_crs(epsg=2154)
     villes_gdf.set_index("city_id", inplace=True)
 
+    # Graphs routes
     G = construction_graph_routes(gdf_proj)
     set_noeud_validé = set(G.nodes)
     liste_noeud_validé = list(set_noeud_validé)
     arbre = cKDTree(liste_noeud_validé)
 
+    # applicage des layer
     print("Indexation spatiale des routes...")
     index_arrete_liste = []
     for u, v, data in G.edges(data=True):
@@ -521,9 +470,9 @@ if __name__ == "__main__":
     gdf_arretes_index = gpd.GeoDataFrame(index_arrete_liste, crs="EPSG:2154")
     index_spatial = gdf_arretes_index.sindex
 
+    # Raccordement intelligent des villes
     print("Raccordement des villes au réseau...")
     villes_raccordées = {}
-    villes_buffer = []
     
     for name, row in tqdm(villes_gdf.iterrows(), total=len(villes_gdf), desc="Projection"):
         point_ville = row.geometry
@@ -531,38 +480,45 @@ if __name__ == "__main__":
 
         info_arrete = cherche_raccordement_villes_routes(point_ville, gdf_arretes_index, index_spatial, set_noeud_validé)
         
-        raccordé = False
+        lien_succès = False
         if info_arrete:
             _, succès = insert_projected_point_in_graph(
                 G, arbre, liste_noeud_validé, info_arrete, point_ville, coords_villes
             )
-            raccordé = succès
-        
-        if not raccordé:
+            if succès:
+                villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
+                lien_succès = True
+                cur.execute("""
+                INSERT OR IGNORE INTO villes VALUES (?, ?, ?, ?)
+                """, (
+                    name,
+                    coords_data[name].get("nom_affichage", name),
+                    coords_data[name]["lat"],
+                    coords_data[name]["lon"]
+                ))
+
+        if not lien_succès:
             best_node, real_dist = meilleur_noeud_fallback(point_ville, arbre, liste_noeud_validé, G)
+
             if best_node:
                 raccorde_ville_route(G, coords_villes, best_node, real_dist)
-                raccordé = True
+                villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
+                cur.execute("""
+                INSERT OR IGNORE INTO villes VALUES (?, ?, ?, ?)
+                """, (
+                    name,
+                    coords_data[name].get("nom_affichage", name),
+                    coords_data[name]["lat"],
+                    coords_data[name]["lon"]
+                ))
             else:
                 print(f"Erreur critique : Impossible de raccorder {name}")
-        
-        if raccordé:
-            villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
-            villes_buffer.append((
-                name,
-                coords_data[name].get("nom_affichage", name),
-                coords_data[name]["lat"],
-                coords_data[name]["lon"]
-            ))
-    
-    if villes_buffer:
-        cur.executemany("""
-        INSERT OR IGNORE INTO villes VALUES (?, ?, ?, ?)
-        """, villes_buffer)
-        conn.commit()
 
+    # Calcul des itinéraires
     sortie = {}
     stats_succès, stats_échec = 0, 0
+    stats_tire_droit = 0
+    stats_distances = []  # Pour analyser les ratios distance/ortho
     routes_buffer = []
     
     for ville_nom, villes_voisines in tqdm(adj_data.items(), desc="Calcul Itinéraires"):
@@ -572,69 +528,62 @@ if __name__ == "__main__":
         noeud_départ = villes_raccordées[ville_nom]["node"]
         sortie[ville_nom] = {"coords": villes_raccordées[ville_nom]["orig_data"], "adjacents": []}
 
-        try:
-            paths = nx.single_source_dijkstra_path(G, source=noeud_départ, weight="time")
-            times = nx.single_source_dijkstra_path_length(G, source=noeud_départ, weight="time")
-            dists = nx.single_source_dijkstra_path_length(G, source=noeud_départ, weight="weight")
-        except Exception:
-            paths = {}
-            times = {}
-            dists = {}
-
         for voisin_nom in villes_voisines:
             if voisin_nom not in villes_raccordées: 
                 continue
             noeud_fin = villes_raccordées[voisin_nom]["node"]
 
             try:
+                # 1. Calculer distance orthodromique (vol d'oiseau)
                 dist_ortho = distance_orthodromique(noeud_départ, noeud_fin)
-
-                if noeud_fin not in paths:
-                    raise nx.NetworkXNoPath()
-
-                chemin_de_noeuds = paths[noeud_fin]
+                
+                # 2. Chercher le chemin par routes
+                chemin_de_noeuds = nx.shortest_path(G, source=noeud_départ, target=noeud_fin, weight="time")
+                
+                # 3. Nettoyer les boucles
                 chemin_de_noeuds = nettoyer_boucles_chemin(chemin_de_noeuds)
-
-                total_temps = times.get(noeud_fin, 0)
-                total_dist = dists.get(noeud_fin, 0)
+                
+                # 4. Calculer distance et temps réels
+                chemin_geom = []
+                total_dist, total_temps = 0, 0
                 sur_autoroute = False
 
-                chemin_geom = []
                 for i in range(len(chemin_de_noeuds) - 1):
                     u, v = chemin_de_noeuds[i], chemin_de_noeuds[i+1]
                     arrete_data = G.get_edge_data(u, v)
-                    if not arrete_data:
+                    if arrete_data is None:
                         continue
                     meilleur_k = min(arrete_data, key=lambda k: arrete_data[k]["time"])
                     data = arrete_data[meilleur_k]
-                    chemin_geom.append(data["geometry"])
-                    if data.get("fclass") in AUTOROUTES:
-                        sur_autoroute = True
 
+                    chemin_geom.append(data["geometry"])
+                    total_dist += data["weight"]
+                    total_temps += data["time"]
+                    if data.get("fclass") in AUTOROUTES: sur_autoroute = True
+                
+                # 5. Si la distance par routes > 3x la distance orthodromique, utiliser la droite
+                tire_droit = False
                 if total_dist > 3 * dist_ortho:
-                    ligne_directe = LineString([Point(noeud_départ), Point(noeud_fin)])
+                    # Utiliser un lien direct entre les deux villes
+                    coord_depart = Point(noeud_départ)
+                    coord_fin = Point(noeud_fin)
+                    ligne_directe = LineString([coord_depart, coord_fin])
+                    
                     total_dist = dist_ortho
-                    total_temps = dist_ortho / (80 / 3.6)
+                    total_temps = dist_ortho / (80 / 3.6)  # Assumer 80 km/h en moyenne
                     chemin_geom = [ligne_directe]
                     sur_autoroute = False
+                    tire_droit = True
 
                 ligne_route = linemerge(chemin_geom)
-                listes_coords = []
-                if ligne_route is not None and not ligne_route.is_empty:
-                    if ligne_route.geom_type == 'LineString':
-                        coords = list(ligne_route.coords)
-                    else:
-                        coords = []
-                        for g in ligne_route.geoms:
-                            coords.extend(list(g.coords))
-
-                    if coords:
-                        xs, ys = zip(*coords)
-                        lons, lats = transformer.transform(xs, ys)
-                        listes_coords = list(zip(lons, lats))
+                ligne_route_wgs84 = gpd.GeoSeries([ligne_route], crs="EPSG:2154").to_crs(epsg=4326).iloc[0]
+                
+                listes_coords = list(ligne_route_wgs84.coords) if ligne_route_wgs84.geom_type == 'LineString' else []
+                if not listes_coords and ligne_route_wgs84.geom_type == 'MultiLineString':
+                    for g in ligne_route_wgs84.geoms: listes_coords.extend(list(g.coords))
 
                 dist_km = total_dist / 1000.0
-                if dist_km > 100:
+                if dist_km > 100: 
                     continue
 
                 sortie[ville_nom]["adjacents"].append({
@@ -643,6 +592,7 @@ if __name__ == "__main__":
                     "temps_min": round(total_temps / 60, 2),
                     "vitesse_moyenne_kmh": round(dist_km / (total_temps / 3600), 2) if total_temps > 0 else 0,
                     "autoroute": sur_autoroute,
+                    "tire_droit": tire_droit,
                     "path_geometry": listes_coords
                 })
                 routes_buffer.append((
@@ -652,6 +602,7 @@ if __name__ == "__main__":
                     round(total_temps / 60, 2),
                     round(dist_km / (total_temps / 3600), 2) if total_temps > 0 else 0,
                     int(sur_autoroute),
+                    int(tire_droit),
                     json.dumps(listes_coords)
                 ))
                 stats_succès += 1
@@ -659,7 +610,7 @@ if __name__ == "__main__":
             except (nx.NetworkXNoPath, Exception):
                 stats_échec += 1
     cur.executemany("""
-    INSERT OR REPLACE INTO routes VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT OR REPLACE INTO routes VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, routes_buffer)
     conn.commit()
     conn.close()
