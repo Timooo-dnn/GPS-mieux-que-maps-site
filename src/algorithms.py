@@ -5,7 +5,6 @@ from localisation import localisation_ville
 from localisation import localisation_ville_test
 
 import math
-import numpy as np
 
 User_Départ = "Toulouse_26686518"
 User_Destination = "Tarbes_26691527"
@@ -79,8 +78,7 @@ dico={}
 liste = []
 visited_global = set() # Ajout d'une mémoire globale des villes visitées
 
-def parcours_dist_orth(ville, villeA, chemin, dico):
-    i=0
+def parcours_dist_orth(ville, villeA, chemin):
     visited_global.add(ville) # Marquer la ville courante comme visitée
     if villeA in maping[ville]:
         return chemin+[villeA]        
@@ -90,24 +88,18 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
         if voisine not in chemin and voisine not in visited_global:
             voisines.append([voisine, distance_orthodromique(localisation_ville[voisine][0], localisation_ville[voisine][1], localisation_ville[villeA][0], localisation_ville[villeA][1])])
     voisinestri=trivoisines(voisines)
-    for voisine in voisinestri[:3] :
-        res = parcours_dist_orth(voisine, villeA, chemin+[voisine], dico)
+    for voisine in voisinestri[:2] :
+        res = parcours_dist_orth(voisine, villeA, chemin+[voisine])
         if res == "trouvé" : return "trouvé"
         if villeA in res :
             liste.append(res)
             #print(res)
-            if len(liste) >= 4 : return "trouvé"
-            """
-            if len(dico)>1:
-                if type(dico[str(i)]) == list:
-                    dico[str(i+1)+'-bis']=res
-            else: 
-                dico[str(i)]=res
-            i+=1
-            """
+            if len(liste) >= 3 : return "trouvé"
+       
 
     return(chemin) # un chemin a été trouvé : remontée du résultat
-parcours_dist_orth(User_Départ, User_Destination, [User_Départ], dico)
+parcours_dist_orth(User_Départ, User_Destination, [User_Départ])
+print(liste)
 
 def liste_to_dico(liste) :
     for i in range (len(liste)) :
