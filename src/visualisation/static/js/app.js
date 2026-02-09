@@ -1,5 +1,3 @@
-// STATE
-// ============================
 let map = null;
 let layerMarkers = null;
 let layerRoutes = null;
@@ -9,9 +7,6 @@ const state = {
     villes: {}
 };
 
-// ============================
-// INITIALIZATION
-// ============================
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     initEventListeners();
@@ -32,27 +27,22 @@ function initMap() {
 }
 
 function initEventListeners() {
-    // Input listeners pour la recherche
     const departInput = document.getElementById('depart_input');
     const arriveeInput = document.getElementById('arrivee_input');
     
     departInput.addEventListener('blur', () => rechercherVille('depart'));
     arriveeInput.addEventListener('blur', () => rechercherVille('arrivee'));
 
-    // Bouton de calcul
     document.getElementById('btn-calcul').addEventListener('click', lancerCalcul);
 
-    // Bouton d'inversion
     document.getElementById('btn-swap').addEventListener('click', inverserTrajet);
 
-    // Close suggestions on Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             fermerSuggestions();
         }
     });
 
-    // Close suggestions on click outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.input-group')) {
             fermerSuggestions();
@@ -60,9 +50,6 @@ function initEventListeners() {
     });
 }
 
-// ============================
-// CHARGEMENT DES DONNÉES
-// ============================
 async function loadVillesData() {
     try {
         const response = await fetch('/api/recherche_ville', {
@@ -70,15 +57,11 @@ async function loadVillesData() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nom: '' })
         });
-        // Note: This endpoint needs all villes, or we can store them differently
     } catch (error) {
         console.error('Erreur lors du chargement des villes:', error);
     }
 }
 
-// ============================
-// RECHERCHE & SÉLECTION DE VILLE
-// ============================
 function rechercherVille(type) {
     const input = document.getElementById(`${type}_input`);
     const statusDiv = document.getElementById(`${type}_status`);
@@ -105,10 +88,8 @@ function rechercherVille(type) {
             statusDiv.innerHTML = "<span style='color: #e74c3c;'>❌ Introuvable</span>";
             document.getElementById(`${type}_id`).value = '';
         } else if (villes.length === 1) {
-            // Exactement une ville trouvée
             selectionnerVille(type, villes[0]);
         } else {
-            // Plusieurs homonymes trouvées - afficher sur la carte
             statusDiv.innerHTML = `<span style='color: #f39c12;'>⚠️ ${villes.length} résultats. Cliquez sur la carte pour choisir.</span>`;
             afficherHomonymes(type, villes);
         }
@@ -148,7 +129,6 @@ function afficherHomonymes(type, villes) {
         bounds.extend([ville.lat, ville.lon]);
     });
     
-    // Centrer la carte sur tous les marqueurs
     if (bounds.isValid()) {
         map.fitBounds(bounds, { padding: [50, 50] });
     }
@@ -169,9 +149,6 @@ function selectionnerVille(type, ville) {
     showToast(`${ville.nom} sélectionné`, 'success');
 }
 
-// ============================
-// INVERSION DE TRAJET
-// ============================
 function inverserTrajet() {
     if (!state.depart.id || !state.arrivee.id) {
         showToast('Veuillez d\'abord sélectionner deux villes', 'warning');
@@ -195,9 +172,6 @@ function inverserTrajet() {
     showToast('Trajets inversés', 'success');
 }
 
-// ============================
-// CALCUL D'ITINÉRAIRE
-// ============================
 async function lancerCalcul() {
     const departId = document.getElementById('depart_id').value;
     const arriveeId = document.getElementById('arrivee_id').value;
@@ -215,7 +189,6 @@ async function lancerCalcul() {
     const btnCalcul = document.getElementById('btn-calcul');
     const loadingOverlay = document.getElementById('loading-overlay');
 
-    // Afficher le loading
     btnCalcul.disabled = true;
     loadingOverlay.style.display = 'flex';
 
@@ -249,12 +222,10 @@ function afficherResultats(itineraire) {
     document.getElementById('res_temps').textContent = itineraire.temps_formate;
     resultatsDiv.style.display = 'block';
     
-    // Tracer le chemin sur la carte
     tracerChemin(itineraire);
 }
 
 function tracerChemin(itineraire) {
-    // Nettoyer les routes précédentes
     layerRoutes.clearLayers();
     
     const villes = itineraire.villes || {};
@@ -336,15 +307,11 @@ function tracerChemin(itineraire) {
         }
     });
     
-    // Zoomer sur les routes tracées
     if (layerRoutes.getLayers().length > 0) {
         map.fitBounds(layerRoutes.getBounds(), { padding: [50, 50] });
     }
 }
 
-// ============================
-// NOTIFICATIONS (TOAST)
-// ============================
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
@@ -355,9 +322,6 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
-// ============================
-// UTILITIES
-// ============================
 function formatTime(minutes) {
     try {
         minutes = parseFloat(minutes);
