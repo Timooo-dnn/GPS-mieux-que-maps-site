@@ -52,12 +52,30 @@ def extraire_infos_itineraire(liste_villes):
         row = cur.fetchone()
         if row:
             autoroute, geom_json = row
-            routes.append({
-                "from": v_from,
-                "to": v_to,
-                "autoroute": bool(autoroute),
-                "geometry": json.loads(geom_json)
-            })
+            # Convertir la liste de coordonnées en GeoJSON LineString
+            try:
+                # Si c'est une chaîne JSON, la parser
+                if isinstance(geom_json, str):
+                    coordinates = json.loads(geom_json)
+                else:
+                    coordinates = geom_json
+                
+                # Créer un GeoJSON LineString valide
+                geometry = {
+                    "type": "LineString",
+                    "coordinates": coordinates
+                }
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"Erreur parsing geometry pour {v_from}->{v_to}: {e}")
+                geometry = None
+            
+            if geometry:
+                routes.append({
+                    "from": v_from,
+                    "to": v_to,
+                    "autoroute": bool(autoroute),
+                    "geometry": geometry
+                })
 
     conn.close()
 
