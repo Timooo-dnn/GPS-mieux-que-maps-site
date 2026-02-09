@@ -27,7 +27,7 @@ def calculer_itineraire(ville_depart, ville_destination):
     liste = []
     dico = {}
     
-    parcours_dist_orth(ville_depart, ville_destination, [ville_depart], dico)
+    parcours_dist_orth(ville_depart, ville_destination, [ville_depart])
     dico_3_chemins = liste_to_dico(liste)
     
     distance_entree = tris_distance_reelle(dico_3_chemins)
