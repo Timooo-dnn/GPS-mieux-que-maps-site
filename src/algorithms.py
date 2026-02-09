@@ -7,7 +7,7 @@ from localisation import localisation_ville_test
 import math
 
 User_Départ = "Toulouse_26686518"
-User_Destination = "Tarbes_26691527"
+User_Destination = "Montauban_2725062491"
 
 
 ## Fonctionnement de l'algo:
@@ -85,9 +85,10 @@ def parcours_dist_orth(ville, villeA, chemin):
     voisines=[]
     for voisine in maping[ville] :
         # Le problème est ici : on ne vérifiait que le chemin actuel, pas l'historique global
-        if voisine not in chemin and voisine not in visited_global:
+        if voisine not in chemin and voisine not in visited_global and maping[voisine]!={}:
             voisines.append([voisine, distance_orthodromique(localisation_ville[voisine][0], localisation_ville[voisine][1], localisation_ville[villeA][0], localisation_ville[villeA][1])])
     voisinestri=trivoisines(voisines)
+    print(voisine)
     for voisine in voisinestri[:2] :
         res = parcours_dist_orth(voisine, villeA, chemin+[voisine])
         if res == "trouvé" : return "trouvé"
