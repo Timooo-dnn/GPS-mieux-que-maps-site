@@ -9,28 +9,17 @@ from shapely.geometry import Point, LineString
 from shapely.ops import linemerge
 from scipy.spatial import cKDTree
 import warnings
-<<<<<<< HEAD
-=======
 from pyproj import Transformer
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
 import numpy as np
 from tqdm import tqdm
 import math
 import sqlite3
-<<<<<<< HEAD
-from ..lien_file import PATH_SHP_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
-=======
 from ..lien_file import PATH_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
 
 warnings.filterwarnings("ignore")
 
 # ================= CONFIGURATION DES PARAMETRES =================
-<<<<<<< HEAD
-CHEMIN_ROUTES = PATH_SHP_ROUTES
-=======
 CHEMIN_ROUTES = PATH_ROUTES
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
 VILLES_ADJACENTS = VILLES_ADJACENTS
 CHEMIN_COORDS = CHEMIN_COORDS
 CHEMIN_SORTIE = CHEMIN_SORTIE
@@ -481,11 +470,6 @@ if __name__ == "__main__":
 
     print("Reprojection des routes...")
     gdf_proj = gdf.to_crs(epsg=2154)
-<<<<<<< HEAD
-=======
-    # Transformer pour reprojection rapide EPSG:2154 -> EPSG:4326
-    transformer = Transformer.from_crs("EPSG:2154", "EPSG:4326", always_xy=True)
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
 
     print("Chargement JSON villes...")
     with open(VILLES_ADJACENTS, "r", encoding="utf-8") as f:
@@ -558,10 +542,7 @@ if __name__ == "__main__":
     # Raccordement intelligent des villes
     print("Raccordement des villes au réseau...")
     villes_raccordées = {}
-<<<<<<< HEAD
-=======
     villes_buffer = []  # Batch insert pour SQL
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
     
     for name, row in tqdm(villes_gdf.iterrows(), total=len(villes_gdf), desc="Projection"):
         point_ville = row.geometry
@@ -569,45 +550,11 @@ if __name__ == "__main__":
 
         info_arrete = cherche_raccordement_villes_routes(point_ville, gdf_arretes_index, index_spatial, set_noeud_validé)
         
-<<<<<<< HEAD
-        lien_succès = False
-=======
         raccordé = False
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
         if info_arrete:
             _, succès = insert_projected_point_in_graph(
                 G, arbre, liste_noeud_validé, info_arrete, point_ville, coords_villes
             )
-<<<<<<< HEAD
-            if succès:
-                villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
-                lien_succès = True
-                cur.execute("""
-                INSERT OR IGNORE INTO villes VALUES (?, ?, ?, ?)
-                """, (
-                    name,
-                    coords_data[name].get("nom_affichage", name),
-                    coords_data[name]["lat"],
-                    coords_data[name]["lon"]
-                ))
-
-        if not lien_succès:
-            best_node, real_dist = meilleur_noeud_fallback(point_ville, arbre, liste_noeud_validé, G)
-
-            if best_node:
-                raccorde_ville_route(G, coords_villes, best_node, real_dist)
-                villes_raccordées[name] = {"node": coords_villes, "orig_data": coords_data[name]}
-                cur.execute("""
-                INSERT OR IGNORE INTO villes VALUES (?, ?, ?, ?)
-                """, (
-                    name,
-                    coords_data[name].get("nom_affichage", name),
-                    coords_data[name]["lat"],
-                    coords_data[name]["lon"]
-                ))
-            else:
-                print(f"Erreur critique : Impossible de raccorder {name}")
-=======
             raccordé = succès
         
         # Fallback si pas de lien direct
@@ -635,7 +582,6 @@ if __name__ == "__main__":
         INSERT OR IGNORE INTO villes VALUES (?, ?, ?, ?)
         """, villes_buffer)
         conn.commit()
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
 
     # Calcul des itinéraires
     sortie = {}
@@ -649,8 +595,6 @@ if __name__ == "__main__":
         noeud_départ = villes_raccordées[ville_nom]["node"]
         sortie[ville_nom] = {"coords": villes_raccordées[ville_nom]["orig_data"], "adjacents": []}
 
-<<<<<<< HEAD
-=======
         # Pré-calculer une seule fois les plus courts chemins (Dijkstra) depuis la source
         try:
             paths = nx.single_source_dijkstra_path(G, source=noeud_départ, weight="time")
@@ -661,7 +605,6 @@ if __name__ == "__main__":
             times = {}
             dists = {}
 
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
         for voisin_nom in villes_voisines:
             if voisin_nom not in villes_raccordées: 
                 continue
@@ -670,40 +613,6 @@ if __name__ == "__main__":
             try:
                 # 1. Calculer distance orthodromique (vol d'oiseau)
                 dist_ortho = distance_orthodromique(noeud_départ, noeud_fin)
-<<<<<<< HEAD
-                
-                # 2. Chercher le chemin par routes
-                chemin_de_noeuds = nx.shortest_path(G, source=noeud_départ, target=noeud_fin, weight="time")
-                
-                # 3. Nettoyer les boucles
-                chemin_de_noeuds = nettoyer_boucles_chemin(chemin_de_noeuds)
-                
-                # 4. Calculer distance et temps réels
-                chemin_geom = []
-                total_dist, total_temps = 0, 0
-                sur_autoroute = False
-
-                for i in range(len(chemin_de_noeuds) - 1):
-                    u, v = chemin_de_noeuds[i], chemin_de_noeuds[i+1]
-                    arrete_data = G.get_edge_data(u, v)
-                    if arrete_data is None:
-                        continue
-                    meilleur_k = min(arrete_data, key=lambda k: arrete_data[k]["time"])
-                    data = arrete_data[meilleur_k]
-
-                    chemin_geom.append(data["geometry"])
-                    total_dist += data["weight"]
-                    total_temps += data["time"]
-                    if data.get("fclass") in AUTOROUTES: sur_autoroute = True
-                
-                # 5. Si la distance par routes > 3x la distance orthodromique, utiliser la droite
-                if total_dist > 3 * dist_ortho:
-                    # Utiliser un lien direct entre les deux villes
-                    coord_depart = Point(noeud_départ)
-                    coord_fin = Point(noeud_fin)
-                    ligne_directe = LineString([coord_depart, coord_fin])
-                    
-=======
 
                 # 2. Récupérer le chemin pré-calculé
                 if noeud_fin not in paths:
@@ -734,23 +643,11 @@ if __name__ == "__main__":
                 if total_dist > 3 * dist_ortho:
                     # Utiliser un lien direct entre les deux villes (coordonnées utilisées directement)
                     ligne_directe = LineString([Point(noeud_départ), Point(noeud_fin)])
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
                     total_dist = dist_ortho
                     total_temps = dist_ortho / (80 / 3.6)  # Assumer 80 km/h en moyenne
                     chemin_geom = [ligne_directe]
                     sur_autoroute = False
 
-<<<<<<< HEAD
-                ligne_route = linemerge(chemin_geom)
-                ligne_route_wgs84 = gpd.GeoSeries([ligne_route], crs="EPSG:2154").to_crs(epsg=4326).iloc[0]
-                
-                listes_coords = list(ligne_route_wgs84.coords) if ligne_route_wgs84.geom_type == 'LineString' else []
-                if not listes_coords and ligne_route_wgs84.geom_type == 'MultiLineString':
-                    for g in ligne_route_wgs84.geoms: listes_coords.extend(list(g.coords))
-
-                dist_km = total_dist / 1000.0
-                if dist_km > 100: 
-=======
                 # 6. Reprojection plus rapide via pyproj Transformer
                 ligne_route = linemerge(chemin_geom)
                 listes_coords = []
@@ -769,7 +666,6 @@ if __name__ == "__main__":
 
                 dist_km = total_dist / 1000.0
                 if dist_km > 100:
->>>>>>> 629ea915f849fade149dbba341d0beb320f5a1be
                     continue
 
                 sortie[ville_nom]["adjacents"].append({
