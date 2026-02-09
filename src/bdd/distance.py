@@ -1,3 +1,6 @@
+#python -m src.bdd.distance
+#python3 -m src.bdd.distance
+
 import geopandas as gpd
 import pandas as pd
 import networkx as nx
