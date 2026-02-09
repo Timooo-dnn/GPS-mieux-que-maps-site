@@ -6,8 +6,6 @@ from localisation import localisation_ville_test
 
 import math
 
-User_Départ = "Toulouse_26686518"
-User_Destination = "Tarbes_26691527"
 
 ## Fonctionnement de l'algo:
 #1. Entrée utilisateur : ville de départ, ville d'arrivée
@@ -93,8 +91,6 @@ def parcours_dist_orth(ville, villeA, chemin):
             liste.append(res)
             #print(res)
             if len(liste) >= 3 : return "trouvé"
-       
-
     return(chemin) # un chemin a été trouvé : remontée du résultat
 
 def liste_to_dico(liste) :
@@ -154,4 +150,3 @@ def formalisation_donnees(chemin,distance,temps):
         }
         sortie_formalisee.append(donnees_chemin)
     return sortie_formalisee
-calculer_itineraire(User_Départ,User_Destination)
