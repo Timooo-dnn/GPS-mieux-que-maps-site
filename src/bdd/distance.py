@@ -14,6 +14,7 @@ from tqdm import tqdm
 import math
 import sqlite3
 from ..lien_file import PATH_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
+from pathlib import Path
 warnings.filterwarnings("ignore")
 
 # ================= CONFIGURATION DES PARAMETRES =================
@@ -410,7 +411,8 @@ if __name__ == "__main__":
     with open(CHEMIN_COORDS, "r", encoding="utf-8") as f:
         coords_data = json.load(f)
 
-    DB_FILE = r"src\data\sqlite\routes.db"
+    BASE_DIR = Path(__file__).resolve().parents[2] # Remonte de src/bdd/distance.py vers la racine projet
+    DB_FILE = BASE_DIR / "src" / "data" / "sqlite" / "routes.db"
 
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()

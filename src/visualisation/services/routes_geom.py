@@ -1,12 +1,18 @@
 import sqlite3
 import json
+from pathlib import Path
 
-DB_FILE = r"src\data\sqlite\routes.db"
-
+BASE_DIR = Path(__file__).resolve().parents[3]
+DB_FILE = BASE_DIR / "src" / "data" / "sqlite" / "routes.db"
 
 def extraire_infos_itineraire(liste_villes):
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
+
+    print("DB_FILE =", DB_FILE)
+
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    print("Tables présentes :", cur.fetchall())
 
     villes = {}
     routes = []

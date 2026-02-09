@@ -3,7 +3,6 @@ import json
 
 DB_FILE = r"src\data\sqlite\routes.db"
 
-
 def audit_database(limit_routes=10):
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
