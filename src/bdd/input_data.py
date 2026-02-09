@@ -20,3 +20,4 @@ chemin_sortie = os.path.join(os.path.dirname(chemin_entree), "dico_final.json")
 
 with open(chemin_sortie, "w", encoding="utf-8") as f:
     json.dump(dico_final, f, ensure_ascii=False, indent=4)
+    print("fichier créé")
