@@ -90,13 +90,13 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
         if voisine not in chemin and voisine not in visited_global:
             voisines.append([voisine, distance_orthodromique(localisation_ville[voisine][0], localisation_ville[voisine][1], localisation_ville[villeA][0], localisation_ville[villeA][1])])
     voisinestri=trivoisines(voisines)
-    for voisine in voisinestri[:2] :
+    for voisine in voisinestri[:3] :
         res = parcours_dist_orth(voisine, villeA, chemin+[voisine], dico)
         if res == "trouvé" : return "trouvé"
         if villeA in res :
             liste.append(res)
             #print(res)
-            if len(liste) >= 3 : return "trouvé"
+            if len(liste) >= 4 : return "trouvé"
             """
             if len(dico)>1:
                 if type(dico[str(i)]) == list:
@@ -129,7 +129,7 @@ def calculer_distance_reelle(tab):
     return round(distance_reelle_totale, 2)
 calculer_distance_reelle(dico_3_chemins_ortho[0])
 
-
+#print(['Toulouse_26686518', 'Tournefeuille_26691412', 'Plaisance-du-Touch_26691742', 'Fonsorbes_26695118', 'Fontenilles_26697797', 'Bonrepos-sur-Aussonnelle_1574500411', 'Saiguède_244884638', 'Saint-Thomas_244884678', 'Seysses-Savès_390002317', 'Savignac-Mona_389939183', 'Monblanc_389931889', 'Samatan_389988030', 'Lombez_389897832', 'Sauveterre_389893184', 'Sabaillan_389884208', 'Tournan_389905878', "Villefranche-d'Astarac_389904276", 'Betcave-Aguin_389842078', 'Moncorneil-Grazan_389701084', 'Sère_389707247', 'Bézues-Bajon_389712639', 'Panassac_389717652', 'Chélan_389743206', 'Peyret-Saint-André_1706148540', 'Larroque_1361030150', 'Ponsan-Soubiran_389677885', 'Guizerix_1706148419', 'Sadournin_1706148581', 'Puydarrieux_1361030156'])
 ## Tri du top 3 distances réelles dans l'ordre croissant
 
 def tris_distance_reelle(dico):
