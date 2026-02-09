@@ -22,6 +22,23 @@ User_Destination = "Tarbes_26691527"
 #8. Trie du plus rapide au plus lent chemin en temps réelle
 #9. Affichage des résultats
 
+def calculer_itineraire(ville_depart, ville_destination):
+    global visited_global, liste, dico
+    
+    visited_global = set()
+    liste = []
+    dico = {}
+    
+    parcours_dist_orth(ville_depart, ville_destination, [ville_depart], dico)
+    
+    dico_3_chemins = liste_to_dico(liste)
+    
+    distance_entree = tris_distance_reelle(dico_3_chemins)
+    temps_entree = tri_temps_reel(dico_3_chemins)
+    
+    # Retourner les résultats formatés
+    return formalisation_donnees(dico_3_chemins, distance_entree, temps_entree)
+
 ## Calcul Othodromique entre 2 points
 def distance_orthodromique(lat1, lng1, lat2, lng2) :
     # angles en degrés
@@ -73,13 +90,13 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
         if voisine not in chemin and voisine not in visited_global:
             voisines.append([voisine, distance_orthodromique(localisation_ville[voisine][0], localisation_ville[voisine][1], localisation_ville[villeA][0], localisation_ville[villeA][1])])
     voisinestri=trivoisines(voisines)
-    for voisine in voisinestri[:2] :
+    for voisine in voisinestri[:3] :
         res = parcours_dist_orth(voisine, villeA, chemin+[voisine], dico)
         if res == "trouvé" : return "trouvé"
         if villeA in res :
             liste.append(res)
             #print(res)
-            if len(liste) >= 3 : return "trouvé"
+            if len(liste) >= 4 : return "trouvé"
             """
             if len(dico)>1:
                 if type(dico[str(i)]) == list:
@@ -92,7 +109,6 @@ def parcours_dist_orth(ville, villeA, chemin, dico):
     return(chemin) # un chemin a été trouvé : remontée du résultat
 parcours_dist_orth(User_Départ, User_Destination, [User_Départ], dico)
 
-    
 def liste_to_dico(liste) :
     for i in range (len(liste)) :
         dico[i]=liste[i]
@@ -113,7 +129,7 @@ def calculer_distance_reelle(tab):
     return round(distance_reelle_totale, 2)
 calculer_distance_reelle(dico_3_chemins_ortho[0])
 
-
+#print(['Toulouse_26686518', 'Tournefeuille_26691412', 'Plaisance-du-Touch_26691742', 'Fonsorbes_26695118', 'Fontenilles_26697797', 'Bonrepos-sur-Aussonnelle_1574500411', 'Saiguède_244884638', 'Saint-Thomas_244884678', 'Seysses-Savès_390002317', 'Savignac-Mona_389939183', 'Monblanc_389931889', 'Samatan_389988030', 'Lombez_389897832', 'Sauveterre_389893184', 'Sabaillan_389884208', 'Tournan_389905878', "Villefranche-d'Astarac_389904276", 'Betcave-Aguin_389842078', 'Moncorneil-Grazan_389701084', 'Sère_389707247', 'Bézues-Bajon_389712639', 'Panassac_389717652', 'Chélan_389743206', 'Peyret-Saint-André_1706148540', 'Larroque_1361030150', 'Ponsan-Soubiran_389677885', 'Guizerix_1706148419', 'Sadournin_1706148581', 'Puydarrieux_1361030156'])
 ## Tri du top 3 distances réelles dans l'ordre croissant
 
 def tris_distance_reelle(dico):
