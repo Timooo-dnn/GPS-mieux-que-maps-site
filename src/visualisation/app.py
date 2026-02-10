@@ -19,7 +19,7 @@ if SRC_DIR not in sys.path:
 # On force le dossier de travail à la racine
 try:
     os.chdir(ROOT_DIR)
-    print(f"📂 Dossier de travail défini sur : {ROOT_DIR}")
+    print(f"Dossier de travail défini sur : {ROOT_DIR}")
 except Exception as e:
     print(f"⚠️ Impossible de changer le dossier de travail : {e}")
 
@@ -31,10 +31,10 @@ try:
     from algorithms import calculer_itineraire
     from map import maping
     from services.routes_geom import extraire_infos_itineraire
-    print(f"✅ Modules chargés. Graphe contenant {len(maping)} villes.")
+    print(f"Modules chargés. Graphe contenant {len(maping)} villes.")
 
 except ImportError as e:
-    print(f"\n❌ ERREUR CRITIQUE D'IMPORT : {e}")
+    print(f"\n ⚠️ ERREUR CRITIQUE D'IMPORT : {e}")
     def calculer_itineraire(d, a): return []
     def extraire_infos_itineraire(l): return {"villes": {}, "routes": []}
 
@@ -50,7 +50,7 @@ try:
     with open(path_coords, 'r', encoding='utf-8') as f:
         DATA_VILLES = json.load(f)
 except FileNotFoundError:
-    print(f"⚠️ ATTENTION : Fichier coords_villes.json introuvable.")
+    print(f"⚠️ Fichier coords_villes.json introuvable.")
 
 # ==========================================
 # 4. FONCTION FORMATAGE TEMPS
@@ -107,7 +107,7 @@ def api_calcul():
         # 3. Récupérer les informations de géométrie des routes
         try:
             geo_infos = extraire_infos_itineraire(chemin)
-            print(f"✅ Géométrie récupérée : {len(geo_infos['villes'])} villes, {len(geo_infos['routes'])} routes")
+            print(f"Géométrie récupérée : {len(geo_infos['villes'])} villes, {len(geo_infos['routes'])} routes")
         except Exception as e:
             print(f"⚠️ Erreur lors de la récupération de la géométrie : {e}")
             import traceback
@@ -126,11 +126,11 @@ def api_calcul():
         })
 
     except Exception as e:
-        print(f"❌ Erreur API : {e}")
+        print(f"⚠️ Erreur API : {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'erreur': str(e)}), 500
 
 if __name__ == '__main__':
-    print("🚀 Serveur lancé : http://127.0.0.1:5000")
+    print("Serveur lancé : http://127.0.0.1:5000")
     app.run(debug=True, port=5000)
