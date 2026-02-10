@@ -307,8 +307,16 @@ function tracerChemin(itineraire) {
         }
     });
     
-    if (layerRoutes.getLayers().length > 0) {
-        map.fitBounds(layerRoutes.getBounds(), { padding: [50, 50] });
+    // Construire les bounds à partir des villes si pas de routes
+    if (Object.keys(villes).length > 0) {
+        const bounds = L.latLngBounds();
+        Object.values(villes).forEach(v => {
+            bounds.extend([v.lat, v.lon]);
+        });
+        
+        if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
     }
 }
 

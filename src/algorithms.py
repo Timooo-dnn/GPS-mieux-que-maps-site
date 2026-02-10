@@ -16,15 +16,17 @@ import numpy as np
 #7. Calcul du temps réelle pour chaque chemin (en prenant en compte la vitesse moyenne des routes entre chaque)
 #8. Trie du plus rapide au plus lent chemin en temps réelle
 #9. Affichage des résultats
-
+premiere_visite = False
 def calculer_itineraire(ville_depart, ville_destination):
-    global visited_global, liste, dico
+    global visited_global, liste, dico, premiere_visite
     
     visited_global = set()
     liste = []
     dico = {}
+    premiere_visite= False
+
     
-    parcours_dist_orth(ville_depart, ville_destination, [ville_depart], dico)
+    parcours_dist_orth(ville_depart, ville_destination, [ville_depart])
     dico_3_chemins = liste_to_dico(liste)
     
     distance_entree = tris_distance_reelle(dico_3_chemins)
@@ -73,23 +75,30 @@ dico={}
 liste = []
 visited_global = set() # Ajout d'une mémoire globale des villes visitées
 
-def parcours_dist_orth(ville, villeA, chemin, dico):
-    i=0
+
+def parcours_dist_orth(ville, villeA, chemin):
+    global premiere_visite
+    voisinestri=[]
     visited_global.add(ville) # Marquer la ville courante comme visitée
     if villeA in maping[ville]:
-        return chemin+[villeA]        
+        chemin_final = chemin + [villeA]
+
+        if chemin_final not in liste:
+            liste.append(chemin_final)
+
+        return chemin_final    
     voisines=[]
     for voisine in maping[ville] :
         # Le problème est ici : on ne vérifiait que le chemin actuel, pas l'historique global
-        if voisine not in chemin and voisine not in visited_global:
+        if voisine not in chemin and voisine not in visited_global and maping[voisine]!={}:
             voisines.append([voisine, distance_orthodromique(localisation_ville[voisine][0], localisation_ville[voisine][1], localisation_ville[villeA][0], localisation_ville[villeA][1])])
     voisinestri=trivoisines(voisines)
-    for voisine in voisinestri[:3] :
-        res = parcours_dist_orth(voisine, villeA, chemin+[voisine], dico)
+    for voisine in voisinestri[:2] :
+        res = parcours_dist_orth(voisine, villeA, chemin+[voisine])
         if res == "trouvé" : return "trouvé"
         if villeA in res :
             liste.append(res)
-            if len(liste) >= 4 : return "trouvé"
+            if len(liste) >= 3 : return "trouvé"
     return(chemin) # un chemin a été trouvé : remontée du résultat
 
 def liste_to_dico(liste) :
@@ -149,3 +158,4 @@ def formalisation_donnees(chemin,distance,temps):
         }
         sortie_formalisee.append(donnees_chemin)
     return sortie_formalisee
+

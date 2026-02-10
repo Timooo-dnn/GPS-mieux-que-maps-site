@@ -18,13 +18,8 @@ def charger_graphe_json(
         1 -> temps
         2 -> vitesse (peu logique pour Dijkstra)
     """
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Fichier introuvable : {path}")
-    except json.JSONDecodeError:
-        raise ValueError("Fichier JSON invalide")
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
     graphe: Dict[str, List[Dict[str, float]]] = {}
 
@@ -48,7 +43,8 @@ def charger_graphe_json(
 
             graphe[ville].append({
                 "to": voisin,
-                "weight": cout
+                "wei"
+                "ght": cout
             })
 
     return graphe
