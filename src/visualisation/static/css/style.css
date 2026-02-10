@@ -1,6 +1,3 @@
-/* ============================================
-   RESET & VARIABLES
-   ============================================ */
 * {
     margin: 0;
     padding: 0;
@@ -39,9 +36,6 @@ body {
     line-height: 1.6;
 }
 
-/* ============================================
-   LAYOUT
-   ============================================ */
 .app-container {
     display: flex;
     height: 100vh;
@@ -59,7 +53,6 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     
-    /* Scrollbar styling */
     scrollbar-width: thin;
     scrollbar-color: var(--primary-color) var(--bg-secondary);
 }
@@ -94,9 +87,6 @@ body {
     border-radius: 0;
 }
 
-/* ============================================
-   SIDEBAR HEADER
-   ============================================ */
 .sidebar-header {
     padding: 30px 24px 20px;
     border-bottom: 2px solid var(--border-color);
@@ -139,9 +129,6 @@ body {
     50% { transform: scale(1.1); }
 }
 
-/* ============================================
-   FORM SECTION
-   ============================================ */
 .form-section {
     flex: 1;
     padding: 24px;
@@ -271,9 +258,6 @@ body {
     color: white;
 }
 
-/* ============================================
-   SWAP BUTTON
-   ============================================ */
 .swap-btn-container {
     display: flex;
     justify-content: center;
@@ -306,9 +290,6 @@ body {
     transform: rotate(180deg) scale(0.95);
 }
 
-/* ============================================
-   CALCULATE BUTTON
-   ============================================ */
 .calculate-btn {
     padding: 14px 20px;
     background: linear-gradient(135deg, var(--success-color), #2ecc71);
@@ -353,9 +334,6 @@ body {
     flex: 1;
 }
 
-/* ============================================
-   RESULTS SECTION
-   ============================================ */
 .results-section {
     padding-top: 24px;
     border-top: 1px solid var(--border-color);
@@ -443,9 +421,6 @@ body {
     color: var(--text-primary);
 }
 
-/* ============================================
-   SIDEBAR FOOTER
-   ============================================ */
 .sidebar-footer {
     padding: 20px 24px;
     border-top: 1px solid var(--border-color);
@@ -460,9 +435,6 @@ body {
     margin: 0;
 }
 
-/* ============================================
-   LOADING OVERLAY
-   ============================================ */
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -497,9 +469,6 @@ body {
     font-weight: 500;
 }
 
-/* ============================================
-   TOAST NOTIFICATION
-   ============================================ */
 .toast {
     position: fixed;
     bottom: 24px;
@@ -543,9 +512,6 @@ body {
     }
 }
 
-/* ============================================
-   LEAFLET POPUP BUTTONS
-   ============================================ */
 .popup-btn {
     background: var(--primary-color);
     color: white;
@@ -572,9 +538,6 @@ body {
     filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.3));
 }
 
-/* ============================================
-   RESPONSIVE
-   ============================================ */
 @media (max-width: 768px) {
     .app-container {
         flex-direction: column;

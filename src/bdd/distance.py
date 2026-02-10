@@ -13,10 +13,12 @@ import numpy as np
 from tqdm import tqdm
 import math
 import sqlite3
-from ..lien_file import PATH_ROUTES, VILLES_ADJACENTS, CHEMIN_COORDS, CHEMIN_SORTIE
 from pathlib import Path
 warnings.filterwarnings("ignore")
-
+PATH_ROUTES = r"src\data\gis_osm_roads_free_1.shp"
+VILLES_ADJACENTS = r"src\data\adjacences_villes.json"
+CHEMIN_COORDS = r"src\data\coords_villes.json"
+CHEMIN_SORTIE = r"src\data\routes_villes_adj.json"
 # ================= CONFIGURATION DES PARAMETRES =================
 CHEMIN_ROUTES = PATH_ROUTES
 VILLES_ADJACENTS = VILLES_ADJACENTS
@@ -71,7 +73,6 @@ POSSIBILITE_RACCORDEMENTS = {
 
 AUTOROUTES = ["motorway", "motorway_link"]
 
-# Pénalités pour optimiser le routage
 PENALITE_PETIT_VILLAGE = 1.5
 THRESHOLD_GRAND_CARREFOUR = 5
 
@@ -131,7 +132,6 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
 
     gdf_arretes["speed_ms"] = (gdf_arretes["final_speed"] * gdf_arretes["coef_sinuosite"]) / 3.6
     
-    # Pénalité légère pour routes locales (moins directes)
     gdf_arretes["penalite_locale"] = gdf_arretes["fclass"].apply(
         lambda f: 1.0 if f in ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"] else 1.1
     )
@@ -173,58 +173,81 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
     return G
 
 def cherche_raccordement_villes_routes(point, gdf_arretes, spatial_index, G_nodes_set, distance_max=3000): #Identifie le meilleur point d'ancrage pour chaque ville sur le graph précédent
+    # Création d'un rectangle (bounding box) autour de la ville avec le rayon distance_max pour limiter la recherche aux routes proches
     rayon_3 = point.buffer(distance_max).bounds
+    
+    # Recherche dans l'index spatial des routes dont la bounding box intersecte le rectangle
     routes_possibles = list(spatial_index.intersection(rayon_3))
     
+    # Si aucune route n'est proche, on renvoie None
     if not routes_possibles:
         return None
 
+    # Sélection des routes candidates à partir des indices trouvés
     arretes_possibles = gdf_arretes.iloc[routes_possibles].copy()
     
+    # Calcul de la distance entre la ville et chaque route candidate
     arretes_possibles["dist_geom"] = arretes_possibles.geometry.distance(point)
+    
+    # Filtrage des routes trop éloignées (distance supérieure à distance_max)
     arretes_possibles = arretes_possibles[arretes_possibles["dist_geom"] < distance_max]
     
+    # Si aucune route n'est dans le rayon autorisé, on renvoie None
     if arretes_possibles.empty:
         return None
 
+    # Initialisation des variables pour mémoriser la meilleure route
     meilleur_routes = None
     meilleur_score = float('inf')
 
+    # Parcours des routes candidates
     for idx, row in arretes_possibles.iterrows():
-        u, v = row['u'], row['v']
+        u, v = row['u'], row['v']  # nœuds de l'arête candidate
         
+        # On ne considère que les routes connectées à au moins un nœud déjà dans le graphe
         if u not in G_nodes_set and v not in G_nodes_set:
             continue
             
+        # Application d'une pénalité si l'arête est sur un niveau z différent de 0 (ex: pont, tunnel) pour éviter de s'y attacher sauf "extrême" nécessité
         penalite_z = 1.0
         if row['z_level'] != 0:
             penalite_z = 5.0
 
-        # AMÉLIORÉ: Pénalité réduite pour les routes majeures (nationales, autoroutes)
+        # Définition des routes majeures pour réduire leur pénalité
         routes_majeures = ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"]
+        
+        # Pénalité selon le type de route, pénalité en fonction de POSSIBILITE_RACCORDEMENTS et si non défini alors 2 par défaut
         penalite_type_routes = POSSIBILITE_RACCORDEMENTS.get(row['fclass'], 2.0)
         
-        # Bonus de 0.5x pour les routes majeures (plus attractives)
+        # Si c'est une route majeure, on divise la pénalité par 2, préférence pour ce type de route
         if row['fclass'] in routes_majeures:
             penalite_type_routes *= 0.5
         
+        # Calcul du score de cette route : distance * pénalité type * pénalité z
         score = row['dist_geom'] * penalite_type_routes * penalite_z
         
+        # Si ce score est meilleur que le meilleur score précédent, on mémorise cette route
         if score < meilleur_score:
             meilleur_score = score
-            geom = row.geometry
+            
+            geom = row.geometry  # géométrie de l'arête
+            # Calcul de la distance projetée le long de l'arête
             dist_along = geom.project(point)
-            dist_along = max(0, min(geom.length, dist_along))
+            dist_along = max(0, min(geom.length, dist_along))  # s'assure que la distance est dans les bornes
+            
+            # Calcul du point projeté sur l'arête
             proj_pt = geom.interpolate(dist_along)
             
+            # Enregistrement des informations de la meilleure route
             meilleur_routes = {
                 'arrete': (u, v),
                 'données_arretes': row.drop(['u', 'v', 'dist_geom']).to_dict(),
-                'projection_point': proj_pt,
-                'distance': row['dist_geom'],
-                'coordonnées_projetes': (proj_pt.x, proj_pt.y)
+                'projection_point': proj_pt,             # shapely Point projeté
+                'distance': row['dist_geom'],           # distance du point à l'arête
+                'coordonnées_projetes': (proj_pt.x, proj_pt.y)  # coordonnées X,Y du point projeté
             }
 
+    # Retourne la meilleure route trouvée ou None si aucune
     return meilleur_routes
 
 def insert_projected_point_in_graph(G, tree, listes_noeud, arrete_infos, point_villes, coord_villes): #Crée une intersection la ou le meilleur point d'ancrage a été identifié
@@ -247,7 +270,6 @@ def insert_projected_point_in_graph(G, tree, listes_noeud, arrete_infos, point_v
         distance_afaire = geometrie_original.project(projection_point)
         liste_coordonnées = list(geometrie_original.coords)
         
-        # Trouver l'index d'insertion
         distance_tot = 0
         insertion_index = 1
         for i in range(len(liste_coordonnées) - 1):
@@ -362,23 +384,19 @@ def meilleur_noeud_fallback(point_ville, arbre, liste_noeud, G, k_voisins=10): #
     return meilleur_noeud, distances[0]
 
 def distance_orthodromique(coord1, coord2):
-    """Calcule la distance orthodromique (vol d'oiseau) en mètres entre deux points en Lambert93"""
     # Les coordonnées en Lambert93 sont en mètres, calcul simple
     dx = coord2[0] - coord1[0]
     dy = coord2[1] - coord1[1]
     return math.sqrt(dx*dx + dy*dy)
 
 def nettoyer_boucles_chemin(chemin_noeuds):
-    """Supprime les boucles dans le chemin: si on repasse par un nœud, supprime le détour"""
     if len(chemin_noeuds) <= 2:
         return chemin_noeuds
     
     chemin_nettoyé = []
     for noeud in chemin_noeuds:
         if noeud in chemin_nettoyé:
-            # On repasse par ce nœud: supprimer le détour entre l'ancienne et nouvelle position
             idx_ancien = chemin_nettoyé.index(noeud)
-            # Garder tout jusqu'à ce nœud et ignorer ce qu'il y a entre
             chemin_nettoyé = chemin_nettoyé[:idx_ancien + 1]
         else:
             chemin_nettoyé.append(noeud)
@@ -411,7 +429,7 @@ if __name__ == "__main__":
     with open(CHEMIN_COORDS, "r", encoding="utf-8") as f:
         coords_data = json.load(f)
 
-    BASE_DIR = Path(__file__).resolve().parents[2] # Remonte de src/bdd/distance.py vers la racine projet
+    BASE_DIR = Path(__file__).resolve().parents[2]
     DB_FILE = BASE_DIR / "src" / "data" / "sqlite" / "routes.db"
 
     conn = sqlite3.connect(DB_FILE)

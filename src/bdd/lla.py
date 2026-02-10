@@ -6,13 +6,13 @@ gdf = gpd.read_file(path_source)
 
 coords_dictionnaire = {}
 
-for _, row in gdf.iterrows():
-    id_ville = row['unique_nm'] if 'unique_nm' in row else f"{row['name']}_{row['osm_id']}"
+for _, ligne in gdf.iterlignes():
+    id_ville = ligne['unique_nm'] if 'unique_nm' in ligne else f"{ligne['name']}_{ligne['osm_id']}"
     
     coords_dictionnaire[id_ville] = {
-        "nom_affichage": row['name'],
-        "lat": row['geometry'].y,
-        "lon": row['geometry'].x
+        "nom_affichage": ligne['name'],
+        "lat": ligne['geometry'].y,
+        "lon": ligne['geometry'].x
     }
 
 output_path = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\coords_villes.json"
