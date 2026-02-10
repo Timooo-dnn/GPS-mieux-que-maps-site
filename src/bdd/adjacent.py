@@ -31,6 +31,7 @@ print(f"Routes majeures trouvées: {len(gdf_majeures_exploded)} segments")
 print(f"Villes à traiter: {len(gdf_villes_proj)}")
 
 def villes_sur_route(route_geom, villes_gdf, buffer_m=1500):
+    """Trouve les villes à proximité d'une route"""
     route_buffer = route_geom.buffer(buffer_m)
     villes_proches = villes_gdf[villes_gdf.geometry.intersects(route_buffer)]
     return villes_proches.index.tolist()
@@ -56,8 +57,7 @@ for idx, route_row in tqdm(gdf_majeures_exploded.iterrows(), total=len(gdf_majeu
         for ville_idx in villes_route:
             id_ville = gdf_villes_proj.iloc[ville_idx]['unique_name']
             
-            villes_adjacentes = [gdf_villes_proj.iloc[v]['unique_name'] 
-                                 for v in villes_route if v != ville_idx]
+            villes_adjacentes = [gdf_villes_proj.iloc[v]['unique_name'] for v in villes_route if v != ville_idx]
             
             if id_ville not in adjacences_routes:
                 adjacences_routes[id_ville] = set()
@@ -85,6 +85,20 @@ for i, row in tqdm(gdf_villes_proj.iterrows(), total=len(gdf_villes_proj), desc=
         adjacents = {d[0] for d in distances[:30]}
     
     adjacences_finale[id_ville] = sorted(list(adjacents))
+
+def rendre_adjacences_symetriques(adjacences: dict) -> dict:
+
+    adj_sym = {ville: set(voisins) for ville, voisins in adjacences.items()}
+    
+    for ville, voisins in adjacences.items():
+        for voisin in voisins:
+            if voisin not in adj_sym:
+                adj_sym[voisin] = set()
+            adj_sym[voisin].add(ville)
+    
+    return {ville: sorted(list(voisins)) for ville, voisins in adj_sym.items()}
+
+adjacences_finale = rendre_adjacences_symetriques(adjacences_finale)
 
 print(f"\n=== STATISTIQUES ===")
 print(f"Villes avec adjacences par routes: {len(adjacences_routes)}")
