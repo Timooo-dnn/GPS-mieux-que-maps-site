@@ -86,6 +86,20 @@ for i, row in tqdm(gdf_villes_proj.iterrows(), total=len(gdf_villes_proj), desc=
     
     adjacences_finale[id_ville] = sorted(list(adjacents))
 
+def rendre_adjacences_symetriques(adjacences: dict) -> dict:
+
+    adj_sym = {ville: set(voisins) for ville, voisins in adjacences.items()}
+    
+    for ville, voisins in adjacences.items():
+        for voisin in voisins:
+            if voisin not in adj_sym:
+                adj_sym[voisin] = set()
+            adj_sym[voisin].add(ville)
+    
+    return {ville: sorted(list(voisins)) for ville, voisins in adj_sym.items()}
+
+adjacences_finale = rendre_adjacences_symetriques(adjacences_finale)
+
 print(f"\n=== STATISTIQUES ===")
 print(f"Villes avec adjacences par routes: {len(adjacences_routes)}")
 print(f"Adjacences moyennes par route: {sum(len(v) for v in adjacences_routes.values()) / max(1, len(adjacences_routes)):.1f}")
