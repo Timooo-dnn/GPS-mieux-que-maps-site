@@ -220,8 +220,23 @@ function afficherResultats(itineraire) {
     const resultatsDiv = document.getElementById('resultats');
     document.getElementById('res_dist').textContent = `${itineraire.distance.toFixed(1)} km`;
     document.getElementById('res_temps').textContent = itineraire.temps_formate;
-    resultatsDiv.style.display = 'block';
     
+    // Détecter s'il y a une autoroute dans le trajet
+    const hasHighway = (itineraire.routes || []).some(route => route.autoroute);
+    const distanceIcon = document.getElementById('distance-icon');
+    const highwayIndicator = document.getElementById('highway-indicator');
+    
+    if (hasHighway) {
+        distanceIcon.classList.remove('fa-road');
+        distanceIcon.classList.add('fa-truck-fast');
+        highwayIndicator.style.display = 'flex';
+    } else {
+        distanceIcon.classList.remove('fa-truck-fast');
+        distanceIcon.classList.add('fa-road');
+        highwayIndicator.style.display = 'none';
+    }
+    
+    resultatsDiv.style.display = 'block';
     tracerChemin(itineraire);
 }
 
@@ -298,7 +313,7 @@ function tracerChemin(itineraire) {
                 });
             }
             
-            const marker = L.marker([v.lat, v.lon], { icon: icon });
+            const marker = L.marker([v.lat, v.lon], { icon: icon }); 
             marker.bindPopup(`<b>${v.nom}</b>`);
             marker.addTo(layerRoutes);
             console.log(`  ✓ ${v.nom} (${villeId})`);
