@@ -145,6 +145,17 @@ def tri_temps_reel(dico):
 
 ## Formulation des données sorties sous format {Chemin}:[Distance_réelle],[Temps réel],[Booléen autoroute]
 
+def verifier_autoroute(trajet):
+    for i in range(len(trajet) - 1):
+        u = trajet[i]
+        v = trajet[i+1]
+        if u in maping and v in maping[u]:
+            infos = maping[u][v]
+            # Vérifie si l'index 3 est True ou si "Autoroute" est présent
+            if (len(infos) > 3 and (infos[3] is True or infos[3] == 1)) or (len(infos) > 1 and isinstance(infos[1], str) and "Autoroute" in infos[1]):
+                return True
+    return False
+
 ## Formulation des données sorties sous format sortie_formalisée=[{Chemin:[chemin]:[Distance_réelle],[Temps réel],[Booléen autoroute]}]
 def formalisation_donnees(chemin,distance,temps):
     sortie_formalisee = []
@@ -154,8 +165,7 @@ def formalisation_donnees(chemin,distance,temps):
             "Chemin" : chemin[id_chemin],
             "distance" : distance[id_chemin],
             "temps" : temps[id_chemin],
-            "Autoroute" : "A" in str(maping.get(chemin[id_chemin][0], {}).get(chemin[id_chemin][1], ""))
+            "Autoroute" : verifier_autoroute(chemin[id_chemin])
         }
         sortie_formalisee.append(donnees_chemin)
     return sortie_formalisee
-

@@ -43,8 +43,7 @@ def charger_graphe_json(
 
             graphe[ville].append({
                 "to": voisin,
-                "wei"
-                "ght": cout
+                "weight": cout
             })
 
     return graphe
@@ -73,7 +72,7 @@ def dijkstra(
         if dist_actuelle > distances[noeud_actuel]:
             continue
 
-        if end is not None and noeud_actuel == end:
+        if noeud_actuel == end:
             break
 
         for arc in graph[noeud_actuel]:
@@ -121,8 +120,8 @@ if __name__ == "__main__":
     # 0 = distance | 1 = temps
     graphe = charger_graphe_json(chemin_json, cout_index=0)
 
-    depart = "Toulouse_26686518"
-    arrivee = "Tarbes_26691527"
+    depart = "Cressensac_469367738"
+    arrivee = "L'Hospitalet-près-l'Andorre_278766409"
 
     distances, predecesseurs = dijkstra(graphe, depart, arrivee)
     chemin = reconstruire_chemin(predecesseurs, depart, arrivee)
