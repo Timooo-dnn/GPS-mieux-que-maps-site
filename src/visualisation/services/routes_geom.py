@@ -40,7 +40,6 @@ def extraire_infos_itineraire(liste_villes):
         v_from = liste_villes[i]
         v_to = liste_villes[i + 1]
 
-        # D'abord, chercher la route directe v_from -> v_to
         cur.execute(
             """
             SELECT autoroute, geometry
@@ -53,7 +52,6 @@ def extraire_infos_itineraire(liste_villes):
         row = cur.fetchone()
         reverse_direction = False
         
-        # Si pas de route directe, chercher en sens inverse v_to -> v_from
         if not row:
             cur.execute(
                 """
@@ -68,7 +66,6 @@ def extraire_infos_itineraire(liste_villes):
         
         if row:
             autoroute, geom_json = row
-            # Convertir la liste de coordonnées en GeoJSON LineString
             try:
                 # Si c'est une chaîne JSON, la parser
                 if isinstance(geom_json, str):
@@ -76,11 +73,9 @@ def extraire_infos_itineraire(liste_villes):
                 else:
                     coordinates = geom_json
                 
-                # Si on a trouvé la route en sens inverse, inverser les coordonnées
                 if reverse_direction:
                     coordinates = coordinates[::-1]
                 
-                # Créer un GeoJSON LineString valide
                 geometry = {
                     "type": "LineString",
                     "coordinates": coordinates
