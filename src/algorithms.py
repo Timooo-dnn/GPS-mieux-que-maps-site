@@ -151,7 +151,7 @@ def verifier_autoroute(trajet):
         v = trajet[i+1]
         if u in maping and v in maping[u]:
             infos = maping[u][v]
-            # Vérifie si l'index 3 est True (structure prod) ou si "Autoroute" est présent
+            # Vérifie si l'index 3 est True ou si "Autoroute" est présent
             if (len(infos) > 3 and (infos[3] is True or infos[3] == 1)) or (len(infos) > 1 and isinstance(infos[1], str) and "Autoroute" in infos[1]):
                 return True
     return False
@@ -168,5 +168,4 @@ def formalisation_donnees(chemin,distance,temps):
             "Autoroute" : verifier_autoroute(chemin[id_chemin])
         }
         sortie_formalisee.append(donnees_chemin)
-        print(sortie_formalisee)
     return sortie_formalisee
