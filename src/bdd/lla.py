@@ -1,12 +1,12 @@
 import geopandas as gpd
 import json
 
-path_source = r"src\data\places_filtres.shp"
+path_source = r"C:\projet_GPS\src\data\places_filtres.shp"
 gdf = gpd.read_file(path_source)
 
 coords_dictionnaire = {}
 
-for _, ligne in gdf.iterlignes():
+for _, ligne in gdf.iterrows():
     id_ville = ligne['unique_nm'] if 'unique_nm' in ligne else f"{ligne['name']}_{ligne['osm_id']}"
     
     coords_dictionnaire[id_ville] = {
@@ -15,7 +15,7 @@ for _, ligne in gdf.iterlignes():
         "lon": ligne['geometry'].x
     }
 
-output_path = r"C:\Users\Gwénaël\OneDrive\Bureau\ENAC\Programmation\projet_GPS\src\data\coords_villes.json"
+output_path = r"C:\projet_GPS\src\data\coords_villes.json"
 with open(output_path, 'w', encoding='utf-8') as f:
     json.dump(coords_dictionnaire, f, ensure_ascii=False, indent=4)
 

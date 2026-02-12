@@ -15,6 +15,7 @@ import math
 import sqlite3
 from pathlib import Path
 warnings.filterwarnings("ignore")
+
 PATH_ROUTES = r"src\data\gis_osm_roads_free_1.shp"
 VILLES_ADJACENTS = r"src\data\adjacences_villes.json"
 CHEMIN_COORDS = r"src\data\coords_villes.json"

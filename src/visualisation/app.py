@@ -4,30 +4,21 @@ import json
 import math
 from flask import Flask, render_template, request, jsonify
 
-# ==========================================
-# 1. CONFIGURATION DU PROJET & CHEMINS
-# ==========================================
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.dirname(CURRENT_DIR)
 ROOT_DIR = os.path.dirname(SRC_DIR)
 
-# On ajoute 'src' au path
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
 
-# On force le dossier de travail à la racine
 try:
     os.chdir(ROOT_DIR)
     print(f"Dossier de travail défini sur : {ROOT_DIR}")
 except Exception as e:
     print(f"⚠️ Impossible de changer le dossier de travail : {e}")
 
-# ==========================================
-# 2. IMPORTS
-# ==========================================
 try:
-    # On importe uniquement l'algo de calcul (plus besoin de la géométrie)
     from algorithms import calculer_itineraire
     from map import maping
     from services.routes_geom import extraire_infos_itineraire
@@ -38,11 +29,83 @@ except ImportError as e:
     def calculer_itineraire(d, a): return []
     def extraire_infos_itineraire(l): return {"villes": {}, "routes": []}
 
+
+def supprimer_boucles(chemin):
+    """
+    Supprime les boucles en aller-retour d'un chemin.
+    Si une ville est visitée plusieurs fois, supprime tout ce qui est entre 
+    les deux passages et garde le chemin optimisé.
+    
+    Exemple: [A, B, C, D, B, E, F] -> [A, B, E, F]
+    """
+    if not chemin or len(chemin) <= 1:
+        return chemin
+    
+    nouveau_chemin = []
+    ville_positions = {}
+    
+    for idx, ville in enumerate(chemin):
+        if ville in ville_positions:
+            # On a déjà visité cette ville
+            # Garder seulement jusqu'au premier passage et continuer à partir de là
+            pos_premiere = ville_positions[ville]
+            nouveau_chemin = nouveau_chemin[:pos_premiere + 1]
+            # Réinitialiser les positions après cette ville
+            ville_positions = {v: i for i, v in enumerate(nouveau_chemin)}
+        else:
+            nouveau_chemin.append(ville)
+            ville_positions[ville] = len(nouveau_chemin) - 1
+    
+    return nouveau_chemin
+
+
+def calculer_distance_reelle(chemin):
+    """
+    Calcule la distance réelle pour un chemin donné en km.
+    """
+    if not chemin or len(chemin) < 2:
+        return 0
+    
+    distance_totale = 0
+    try:
+        for i in range(len(chemin) - 1):
+            ville_depart = chemin[i]
+            ville_arrivee = chemin[i + 1]
+            
+            if ville_depart in maping and ville_arrivee in maping[ville_depart]:
+                distance_pair = maping[ville_depart][ville_arrivee]
+                km = distance_pair[0]
+                distance_totale += km
+    except (KeyError, IndexError, TypeError) as e:
+        print(f"⚠️ Erreur lors du calcul de distance : {e}")
+    
+    return round(distance_totale, 2)
+
+
+def calculer_temps_reel(chemin):
+    """
+    Calcule le temps réel pour un chemin donné en minutes.
+    """
+    if not chemin or len(chemin) < 2:
+        return 0
+    
+    temps_total = 0
+    try:
+        for i in range(len(chemin) - 1):
+            ville_depart = chemin[i]
+            ville_arrivee = chemin[i + 1]
+            
+            if ville_depart in maping and ville_arrivee in maping[ville_depart]:
+                distance_pair = maping[ville_depart][ville_arrivee]
+                temps = distance_pair[1]  # Index 1 contient le temps
+                temps_total += temps
+    except (KeyError, IndexError, TypeError) as e:
+        print(f"⚠️ Erreur lors du calcul de temps : {e}")
+    
+    return round(temps_total, 2)
+
 app = Flask(__name__)
 
-# ==========================================
-# 3. CHARGEMENT DES DONNÉES (AUTOCOMPLÉTION)
-# ==========================================
 DATA_VILLES = {}
 path_coords = os.path.join(ROOT_DIR, "src", "data", "coords_villes.json")
 
@@ -52,9 +115,6 @@ try:
 except FileNotFoundError:
     print(f"⚠️ Fichier coords_villes.json introuvable.")
 
-# ==========================================
-# 4. FONCTION FORMATAGE TEMPS
-# ==========================================
 def formatter_temps(minutes):
     try:
         minutes = float(minutes)
@@ -66,10 +126,6 @@ def formatter_temps(minutes):
             return f"{heures} h {rest_min:02d} min"
     except (ValueError, TypeError):
         return "0 min"
-
-# ==========================================
-# 5. ROUTES API
-# ==========================================
 
 @app.route('/')
 def index():
@@ -89,9 +145,6 @@ def api_recherche():
 def api_calcul():
     data = request.json
     try:
-        print(f"🔄 Calcul demandé : {data['depart']} -> {data['arrivee']}")
-
-        # 1. Calcul mathématique uniquement
         resultats_algo = calculer_itineraire(data['depart'], data['arrivee'])
         
         if not resultats_algo:
@@ -100,11 +153,9 @@ def api_calcul():
         best = resultats_algo[0]
         chemin = best.get('Chemin', [])
         
-        # 2. Formatage des données
         dist = best.get('distance') or best.get('Distance_reelle') or 0
         tps_raw = best.get('temps') or best.get('Temps_reel') or 0
         
-        # 3. Récupérer les informations de géométrie des routes
         try:
             geo_infos = extraire_infos_itineraire(chemin)
             print(f"Géométrie récupérée : {len(geo_infos['villes'])} villes, {len(geo_infos['routes'])} routes")
