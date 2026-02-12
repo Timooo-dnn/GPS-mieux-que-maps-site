@@ -159,3 +159,4 @@ def formalisation_donnees(chemin,distance,temps):
         sortie_formalisee.append(donnees_chemin)
     return sortie_formalisee
 
+
