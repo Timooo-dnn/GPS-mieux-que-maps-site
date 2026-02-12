@@ -150,14 +150,11 @@ def api_calcul():
         try:
             resultats_algo = calculer_itineraire(depart, arrivee)
         except RecursionError:
-            # Si on atteint la limite de récursion, on essaie dans le sens inverse
             print(f"⚠️ Récursion infinie détectée avec {depart} -> {arrivee}")
             print(f"✓ Tentative en sens inverse : {arrivee} -> {depart}")
             
-            # Chercher en sens inverse
             resultats_algo = calculer_itineraire(arrivee, depart)
             
-            # Inverser chaque chemin trouvé pour afficher dans le bon sens
             for result in resultats_algo:
                 result['Chemin'] = result['Chemin'][::-1]
         
