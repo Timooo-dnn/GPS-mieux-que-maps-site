@@ -4,7 +4,6 @@ import json
 import math
 from flask import Flask, render_template, request, jsonify
 
-
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.dirname(CURRENT_DIR)
 ROOT_DIR = os.path.dirname(SRC_DIR)
@@ -145,7 +144,22 @@ def api_recherche():
 def api_calcul():
     data = request.json
     try:
-        resultats_algo = calculer_itineraire(data['depart'], data['arrivee'])
+        depart = data['depart']
+        arrivee = data['arrivee']
+        
+        try:
+            resultats_algo = calculer_itineraire(depart, arrivee)
+        except RecursionError:
+            # Si on atteint la limite de récursion, on essaie dans le sens inverse
+            print(f"⚠️ Récursion infinie détectée avec {depart} -> {arrivee}")
+            print(f"✓ Tentative en sens inverse : {arrivee} -> {depart}")
+            
+            # Chercher en sens inverse
+            resultats_algo = calculer_itineraire(arrivee, depart)
+            
+            # Inverser chaque chemin trouvé pour afficher dans le bon sens
+            for result in resultats_algo:
+                result['Chemin'] = result['Chemin'][::-1]
         
         if not resultats_algo:
             return jsonify({'erreur': 'Aucun chemin trouvé.'}), 404

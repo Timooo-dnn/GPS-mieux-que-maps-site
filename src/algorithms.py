@@ -5,7 +5,6 @@ from localisation import localisation_ville_test
 import math
 import numpy as np
 
-
 ## Fonctionnement de l'algo:
 #1. Entrée utilisateur : ville de départ, ville d'arrivée
 #2. Vérification si ville d'arrivée dans les voisines directes de la ville de départ
