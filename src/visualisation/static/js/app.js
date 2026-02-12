@@ -14,7 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initMap() {
-    map = L.map('map').setView([43.6045, 1.4442], 7);
+    map = L.map('map', {
+        doubleClickZoom: false
+    }).setView([43.6045, 1.4442], 7);
+
+    window.map = map;  // Exposer sur window pour les Easter eggs
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
@@ -24,6 +28,14 @@ function initMap() {
 
     layerMarkers = L.layerGroup().addTo(map);
     layerRoutes = L.layerGroup().addTo(map);
+    window.layerRoutes = layerRoutes;  // Exposer aussi layerRoutes
+
+    // 🎬 Easter Egg Double-clic - Rick Roll
+    map.on('dblclick', () => {
+        if (typeof DoubleClickEasterEgg !== 'undefined') {
+            DoubleClickEasterEgg.trigger();
+        }
+    });
 }
 
 function initEventListeners() {
@@ -97,6 +109,16 @@ function rechercherVille(type) {
     .catch(err => {
         console.error('Erreur:', err);
         statusDiv.innerHTML = "<span style='color: #e74c3c;'>❌ Erreur de recherche</span>";
+    });
+}
+
+/**
+ * Ferme les dropdowns de suggestions
+ */
+function fermerSuggestions() {
+    const suggestions = document.querySelectorAll('.suggestions-dropdown');
+    suggestions.forEach(s => {
+        s.style.display = 'none';
     });
 }
 
@@ -316,6 +338,16 @@ function tracerChemin(itineraire) {
             const marker = L.marker([v.lat, v.lon], { icon: icon }); 
             marker.bindPopup(`<b>${v.nom}</b>`);
             marker.addTo(layerRoutes);
+            
+            // 🎉 Easter Eggs pour certaines villes
+            marker.on('click', (e) => {
+                // Fermer le popup Leaflet
+                map.closePopup();
+                // Déclencher l'Easter egg
+                console.log(`🎯 Clic sur marqueur: ${v.nom}`);
+                easterEggsManager.trigger(v.nom);
+            });
+            
             console.log(`  ✓ ${v.nom} (${villeId})`);
         } else {
             console.warn(`Ville ${villeId} : données manquantes`, v);

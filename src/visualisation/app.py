@@ -29,34 +29,6 @@ except ImportError as e:
     def extraire_infos_itineraire(l): return {"villes": {}, "routes": []}
 
 
-def supprimer_boucles(chemin):
-    """
-    Supprime les boucles en aller-retour d'un chemin.
-    Si une ville est visitée plusieurs fois, supprime tout ce qui est entre 
-    les deux passages et garde le chemin optimisé.
-    
-    Exemple: [A, B, C, D, B, E, F] -> [A, B, E, F]
-    """
-    if not chemin or len(chemin) <= 1:
-        return chemin
-    
-    nouveau_chemin = []
-    ville_positions = {}
-    
-    for idx, ville in enumerate(chemin):
-        if ville in ville_positions:
-            # On a déjà visité cette ville
-            # Garder seulement jusqu'au premier passage et continuer à partir de là
-            pos_premiere = ville_positions[ville]
-            nouveau_chemin = nouveau_chemin[:pos_premiere + 1]
-            # Réinitialiser les positions après cette ville
-            ville_positions = {v: i for i, v in enumerate(nouveau_chemin)}
-        else:
-            nouveau_chemin.append(ville)
-            ville_positions[ville] = len(nouveau_chemin) - 1
-    
-    return nouveau_chemin
-
 
 def calculer_distance_reelle(chemin):
     """

@@ -648,3 +648,730 @@ body {
         font-size: 16px;
     }
 }
+/* 🎉 EFFETS SPÉCIAUX TOULOUSE */
+
+@keyframes tremblement {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    10% { transform: translate(-3px, -3px) rotate(0.5deg); }
+    20% { transform: translate(3px, -2px) rotate(-0.5deg); }
+    30% { transform: translate(-2px, 3px) rotate(0.5deg); }
+    40% { transform: translate(2px, -3px) rotate(-0.5deg); }
+    50% { transform: translate(-3px, 2px) rotate(0.5deg); }
+    60% { transform: translate(3px, 3px) rotate(-0.5deg); }
+    70% { transform: translate(-2px, -2px) rotate(0.5deg); }
+    80% { transform: translate(2px, 2px) rotate(-0.5deg); }
+    90% { transform: translate(-3px, 3px) rotate(0.5deg); }
+}
+
+.app-container.trembling {
+    animation: tremblement 0.1s infinite;
+}
+
+@keyframes traversee-bus {
+    0% {
+        left: -150px;
+        bottom: 50%;
+        transform: scaleX(1);
+    }
+    50% {
+        bottom: 50%;
+    }
+    100% {
+        left: 100vw;
+        bottom: 50%;
+        transform: scaleX(1);
+    }
+}
+
+.bus-easter-egg {
+    position: fixed;
+    width: 150px;
+    height: 80px;
+    bottom: 50%;
+    left: -150px;
+    font-size: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.bus-easter-egg.active {
+    animation: traversee-bus 4s ease-in-out forwards;
+}
+
+@keyframes pop-message {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.2);
+    }
+}
+
+.toulouse-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    font-weight: bold;
+    z-index: 9999;
+    pointer-events: none;
+    animation: pop-message 3s ease-out forwards;
+}
+
+/* 🎉 EFFETS SPÉCIAUX RODEZ 🐄🧀 */
+
+@keyframes rotate-3d {
+    from {
+        transform: rotateY(0deg);
+    }
+    to {
+        transform: rotateY(360deg);
+    }
+}
+
+#rodez-game-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rodez-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.rodez-game-panel {
+    background: linear-gradient(135deg, #90EE90, #98FB98);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    color: #333;
+    font-weight: bold;
+    position: relative;
+    border: 4px solid #228B22;
+    cursor: auto;
+}
+
+.rodez-game-panel h2 {
+    font-size: 32px;
+    margin-bottom: 20px;
+    color: #1a5f1a;
+}
+
+.rodez-game-panel p {
+    font-size: 18px;
+    margin: 12px 0;
+    color: #2d5016;
+}
+
+.cheese-hint {
+    font-size: 24px;
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 10px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.cheese-hint.hot {
+    background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+    color: white;
+    font-weight: bold;
+    animation: shake 0.2s infinite;
+}
+
+.cheese-hint.warm {
+    background: linear-gradient(135deg, #FFA726, #FFB74D);
+    color: white;
+    font-weight: bold;
+}
+
+.cheese-hint.cold {
+    background: linear-gradient(135deg, #64B5F6, #81C4F9);
+    color: white;
+    font-weight: bold;
+}
+
+.cheese-hint.frozen {
+    background: linear-gradient(135deg, #4DB8FF, #7FD4FF);
+    color: white;
+    font-weight: bold;
+    animation: shiver 0.15s infinite;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+@keyframes shiver {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.rodez-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #FF6B6B;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rodez-close-btn:hover {
+    background: #FF5252;
+    transform: scale(1.1);
+}
+
+.rodez-game-panel button:not(.rodez-close-btn) {
+    margin-top: 20px;
+    padding: 12px 24px;
+    font-size: 16px;
+    background: #228B22;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.rodez-game-panel button:not(.rodez-close-btn):hover {
+    background: #1a6b1a;
+    transform: scale(1.05);
+}
+
+/* Vache 3D */
+.rodez-cow-3d {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 80px;
+    z-index: 6000;
+    cursor: pointer;
+    animation: butt-wiggle 1s infinite;
+    perspective: 1000px;
+}
+
+.cow-body {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cow-head {
+    font-size: 60px;
+}
+
+.cow-spots {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    background: radial-gradient(circle at 30% 30%, #333, #333);
+    border-radius: 50%;
+    margin: 0 5px;
+}
+
+@keyframes butt-wiggle {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-10px) rotate(2deg); }
+    50% { transform: translateY(-5px) rotate(-2deg); }
+    75% { transform: translateY(-8px) rotate(1deg); }
+}
+
+/* Animation du fromage qui flotte */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+/* 🌄 EFFETS SPÉCIAUX MILLAU - Viaduc & Voiture & Drone */
+
+@keyframes viaduct-glow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5),
+                    0 0 20px rgba(255, 165, 0, 0.4),
+                    0 0 40px rgba(255, 100, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
+                    0 0 40px rgba(255, 165, 0, 0.6),
+                    0 0 60px rgba(255, 100, 0, 0.5);
+    }
+}
+
+@keyframes car-traverse {
+    0% {
+        left: 10%;
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        left: 90%;
+        opacity: 0;
+    }
+}
+
+@keyframes drone-takeoff {
+    0% {
+        bottom: 0;
+        opacity: 1;
+    }
+    100% {
+        bottom: 50px;
+        opacity: 1;
+    }
+}
+
+@keyframes drone-loop {
+    0% {
+        transform: translateX(0) rotate(0deg);
+    }
+    25% {
+        transform: translateX(100px) translateY(-50px) rotate(90deg);
+    }
+    50% {
+        transform: translateX(200px) rotate(180deg);
+    }
+    75% {
+        transform: translateX(100px) translateY(50px) rotate(270deg);
+    }
+    100% {
+        transform: translateX(0) rotate(360deg);
+    }
+}
+
+#millau-viaduct {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    height: 150px;
+    z-index: 8000;
+    pointer-events: none;
+}
+
+.viaduct-bridge {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    animation: viaduct-glow 2s ease-in-out infinite;
+}
+
+.viaduct-tower {
+    position: absolute;
+    width: 8px;
+    height: 120px;
+    background: linear-gradient(to bottom, #FFD700, #FFA500);
+    border-radius: 4px;
+    bottom: 20px;
+}
+
+.viaduct-tower:nth-child(1) {
+    left: 50px;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+}
+
+.viaduct-tower:nth-child(2) {
+    left: 196px;
+    height: 140px;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+}
+
+.viaduct-tower:nth-child(3) {
+    right: 50px;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+}
+
+.viaduct-road {
+    position: absolute;
+    width: 90%;
+    height: 12px;
+    background: linear-gradient(to right, #555, #777, #555);
+    top: 20px;
+    left: 5%;
+    border-radius: 6px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+}
+
+.millau-car {
+    position: fixed;
+    top: 45%;
+    font-size: 40px;
+    animation: car-traverse 4s ease-in-out forwards;
+    z-index: 8001;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.millau-drone {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 35px;
+    z-index: 8002;
+    pointer-events: none;
+    animation: drone-takeoff 1s ease-out forwards, drone-loop 6s ease-in-out 1s forwards infinite;
+    filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 15px rgba(100, 150, 255, 0.5));
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .rodez-game-panel {
+        max-width: 90%;
+        padding: 30px 20px;
+    }
+
+    .rodez-game-panel h2 {
+        font-size: 24px;
+    }
+
+    .rodez-game-panel p {
+        font-size: 16px;
+    }
+
+    .rodez-cow-3d {
+        font-size: 60px;
+        bottom: 10px;
+        right: 10px;
+    }
+}
+
+/* 🌋 EFFETS SPÉCIAUX MONTAUBAN - Volcan Cartoon */
+
+@keyframes volcano-shake {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    10% { transform: translateX(-2px) rotate(-0.5deg); }
+    20% { transform: translateX(2px) rotate(0.5deg); }
+    30% { transform: translateX(-2px) rotate(-0.5deg); }
+    40% { transform: translateX(2px) rotate(0.5deg); }
+    50% { transform: translateX(-1px) rotate(-0.3deg); }
+    60% { transform: translateX(1px) rotate(0.3deg); }
+    70% { transform: translateX(-1px) rotate(-0.3deg); }
+    80% { transform: translateX(1px) rotate(0.3deg); }
+    90% { transform: translateX(0px) rotate(0deg); }
+}
+
+@keyframes smoke-rise {
+    0% {
+        transform: translateY(0) translateX(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-80px) translateX(20px) scale(1.5);
+        opacity: 0;
+    }
+}
+
+@keyframes lava-bubble {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+@keyframes error-pulse {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+    }
+    50% {
+        transform: scale(1.05);
+        text-shadow: 0 0 40px rgba(255, 0, 0, 0.8), 0 0 60px rgba(255, 100, 0, 0.6);
+    }
+}
+
+#montauban-volcano {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 200px;
+    z-index: 8000;
+    pointer-events: none;
+    animation: volcano-shake 2s ease-in-out infinite;
+}
+
+.volcano-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.volcano-base {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin: 0 auto;
+}
+
+/* Corps du volcan */
+.volcano-body {
+    position: absolute;
+    bottom: 0;
+    left: 25%;
+    width: 0;
+    height: 0;
+    border-left: 50px solid transparent;
+    border-right: 50px solid transparent;
+    border-bottom: 100px solid #8B4513;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* Cratère du volcan */
+.volcano-crater {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 40px;
+    background: radial-gradient(ellipse at center, #553300 0%, #331100 100%);
+    border-radius: 50% 50% 30% 30%;
+    box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.6), 
+                0 0 20px rgba(255, 100, 0, 0.4);
+}
+
+/* Lave/effet intérieur */
+.volcano-lava {
+    position: absolute;
+    bottom: 105px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 20px;
+    background: radial-gradient(ellipse, #FF6B00, #FF4500);
+    border-radius: 50%;
+    animation: lava-bubble 1.5s ease-in-out infinite;
+    opacity: 0;
+}
+
+/* Fumée */
+.volcano-smoke {
+    position: absolute;
+    bottom: 100px;
+    font-size: 30px;
+    pointer-events: none;
+    animation: smoke-rise 2s ease-out forwards;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Message d'erreur géologique */
+.geology-error-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, rgba(255, 100, 0, 0.95), rgba(255, 50, 0, 0.95));
+    border: 3px solid #FF0000;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    color: white;
+    z-index: 8001;
+    box-shadow: 0 0 40px rgba(255, 0, 0, 0.6),
+                inset 0 0 20px rgba(255, 100, 0, 0.3);
+    animation: error-pulse 1.5s ease-in-out infinite;
+    max-width: 500px;
+    pointer-events: none;
+}
+
+.geology-error-message h2 {
+    font-size: 32px;
+    margin: 0 0 15px 0;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.geology-error-message p {
+    margin: 10px 0;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+}
+
+.geology-error-message p:last-child {
+    font-size: 12px;
+    color: #FFD700;
+    margin-top: 15px;
+}
+
+/* 🎬 EASTER EGG RICK ROLL - Double-clic */
+
+@keyframes rick-roll-popup {
+    0% {
+        transform: scale(0) rotateX(90deg);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) rotateX(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes rick-roll-bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.rick-roll-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.rick-roll-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 700px;
+    max-height: 90vh;
+    width: 90%;
+    box-shadow: 0 0 60px rgba(255, 0, 100, 0.5),
+                0 0 100px rgba(0, 150, 255, 0.3),
+                inset 0 0 30px rgba(255, 255, 255, 0.1);
+    animation: rick-roll-popup 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 2px solid #FF0064;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.rick-roll-title {
+    text-align: center;
+    font-size: 36px;
+    margin: 0 0 20px 0;
+    color: #FF0064;
+    text-shadow: 0 0 20px rgba(255, 0, 100, 0.6),
+                 0 0 40px rgba(0, 150, 255, 0.4);
+    animation: rick-roll-bounce 1s ease-in-out infinite;
+    letter-spacing: 2px;
+}
+
+.rick-roll-video {
+    width: 100%;
+    position: relative;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.rick-roll-video iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.rick-roll-message {
+    text-align: center;
+    color: white;
+    background: rgba(255, 0, 100, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #FF0064;
+    border-right: 4px solid #FF0064;
+}
+
+.rick-roll-message p {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #FF0064;
+    text-shadow: 0 0 10px rgba(255, 0, 100, 0.5);
+    letter-spacing: 1px;
+}
+
+.rick-roll-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #FF0064;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 0, 100, 0.4);
+    z-index: 10001;
+}
+
+.rick-roll-close:hover {
+    background: #FF3080;
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 6px 20px rgba(255, 0, 100, 0.6);
+}
+
+.rick-roll-close:active {
+    transform: scale(0.95) rotate(90deg);
+}
