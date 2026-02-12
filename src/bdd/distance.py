@@ -426,6 +426,16 @@ if __name__ == "__main__":
     print("Chargement JSON villes...")
     with open(VILLES_ADJACENTS, "r", encoding="utf-8") as f:
         adj_data = json.load(f)
+
+    # ===== Forcer les adjacences bidirectionnelles =====
+    for ville, voisins in list(adj_data.items()):
+        for voisin in voisins:
+            adj_data.setdefault(voisin, [])
+            if ville not in adj_data[voisin]:
+                adj_data[voisin].append(ville)
+    print(f"Adjacences totales après symétrie : {sum(len(v) for v in adj_data.values())}")
+    #====================================================
+            
     with open(CHEMIN_COORDS, "r", encoding="utf-8") as f:
         coords_data = json.load(f)
 
@@ -638,5 +648,26 @@ if __name__ == "__main__":
     conn.commit()
     conn.close()
     print(f"Terminé. Succès : {stats_succès}, Échecs : {stats_échec}")
+
+    #==============Symétrisation de routes_villes_adj.json=================
+
+    for ville, data in list(sortie.items()):
+        for adj in data["adjacents"]:
+            voisin = adj["nom"]
+
+            sortie.setdefault(voisin, {
+                "coords": coords_data.get(voisin, {}),
+                "adjacents": []
+            })
+
+            # éviter les doublons
+            noms_existants = {a["nom"] for a in sortie[voisin]["adjacents"]}
+
+            if ville not in noms_existants:
+                adj_inverse = adj.copy()
+                adj_inverse["nom"] = ville
+                sortie[voisin]["adjacents"].append(adj_inverse)
+#==========================================================================
+
     with open(CHEMIN_SORTIE, "w", encoding="utf-8") as f:
         json.dump(sortie, f, ensure_ascii=False, indent=4)
