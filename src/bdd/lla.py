@@ -1,13 +1,16 @@
 import geopandas as gpd
 import json
 
-path_source = r"C:\projet_GPS\src\data\places_filtres.shp"
-gdf = gpd.read_file(path_source)
+origine = r"C:\projet_GPS\src\data\places_filtres.shp"
+gdf = gpd.read_file(origine)
 
 coords_dictionnaire = {}
 
 for _, ligne in gdf.iterrows():
-    id_ville = ligne['unique_nm'] if 'unique_nm' in ligne else f"{ligne['name']}_{ligne['osm_id']}"
+    if 'unique_nm' in ligne:
+        id_ville = ligne['unique_nm']
+    else :
+        f"{ligne['name']}_{ligne['osm_id']}"
     
     coords_dictionnaire[id_ville] = {
         "nom_affichage": ligne['name'],
