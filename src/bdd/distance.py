@@ -385,7 +385,6 @@ def meilleur_noeud_fallback(point_ville, arbre, liste_noeud, G, k_voisins=10): #
     return meilleur_noeud, distances[0]
 
 def distance_orthodromique(coord1, coord2):
-    # Les coordonnées en Lambert93 sont en mètres, calcul simple
     dx = coord2[0] - coord1[0]
     dy = coord2[1] - coord1[1]
     return math.sqrt(dx*dx + dy*dy)
@@ -428,14 +427,12 @@ if __name__ == "__main__":
     with open(VILLES_ADJACENTS, "r", encoding="utf-8") as f:
         adj_data = json.load(f)
 
-    # ===== Forcer les adjacences bidirectionnelles =====
     for ville, voisins in list(adj_data.items()):
         for voisin in voisins:
             adj_data.setdefault(voisin, [])
             if ville not in adj_data[voisin]:
                 adj_data[voisin].append(ville)
     print(f"Adjacences totales après symétrie : {sum(len(v) for v in adj_data.values())}")
-    #====================================================
             
     with open(CHEMIN_COORDS, "r", encoding="utf-8") as f:
         coords_data = json.load(f)
@@ -486,7 +483,6 @@ if __name__ == "__main__":
     villes_gdf = gpd.GeoDataFrame(cities_data_list, crs="EPSG:4326").to_crs(epsg=2154)
     villes_gdf.set_index("city_id", inplace=True)
 
-    # Graphs routes
     G = construction_graph_routes(gdf_proj)
     set_noeud_validé = set(G.nodes)
     liste_noeud_validé = list(set_noeud_validé)
@@ -548,11 +544,10 @@ if __name__ == "__main__":
             else:
                 print(f"Erreur critique : Impossible de raccorder {name}")
 
-    # Calcul des itinéraires
     sortie = {}
     stats_succès, stats_échec = 0, 0
     stats_tire_droit = 0
-    stats_distances = []  # Pour analyser les ratios distance/ortho
+    stats_distances = []
     routes_buffer = []
     
     for ville_nom, villes_voisines in tqdm(adj_data.items(), desc="Calcul Itinéraires"):
@@ -598,13 +593,12 @@ if __name__ == "__main__":
                 # 5. Si la distance par routes > 3x la distance orthodromique, utiliser la droite
                 tire_droit = False
                 if total_dist > 3 * dist_ortho:
-                    # Utiliser un lien direct entre les deux villes
                     coord_depart = Point(noeud_départ)
                     coord_fin = Point(noeud_fin)
                     ligne_directe = LineString([coord_depart, coord_fin])
                     
                     total_dist = dist_ortho
-                    total_temps = dist_ortho / (80 / 3.6)  # Assumer 80 km/h en moyenne
+                    total_temps = dist_ortho / (80 / 3.6)
                     chemin_geom = [ligne_directe]
                     sur_autoroute = False
                     tire_droit = True
@@ -650,8 +644,6 @@ if __name__ == "__main__":
     conn.close()
     print(f"Terminé. Succès : {stats_succès}, Échecs : {stats_échec}")
 
-    #==============Symétrisation de routes_villes_adj.json=================
-
     for ville, data in list(sortie.items()):
         for adj in data["adjacents"]:
             voisin = adj["nom"]
@@ -668,7 +660,6 @@ if __name__ == "__main__":
                 adj_inverse = adj.copy()
                 adj_inverse["nom"] = ville
                 sortie[voisin]["adjacents"].append(adj_inverse)
-#==========================================================================
 
     with open(CHEMIN_SORTIE, "w", encoding="utf-8") as f:
         json.dump(sortie, f, ensure_ascii=False, indent=4)

@@ -648,7 +648,6 @@ body {
         font-size: 16px;
     }
 }
-/* 🎉 EFFETS SPÉCIAUX TOULOUSE */
 
 @keyframes tremblement {
     0%, 100% { transform: translate(0, 0) rotate(0deg); }
@@ -726,8 +725,6 @@ body {
     pointer-events: none;
     animation: pop-message 3s ease-out forwards;
 }
-
-/* 🎉 EFFETS SPÉCIAUX RODEZ 🐄🧀 */
 
 @keyframes rotate-3d {
     from {
@@ -928,8 +925,6 @@ body {
     }
 }
 
-/* 🌄 EFFETS SPÉCIAUX MILLAU - Viaduc & Voiture & Drone */
-
 @keyframes viaduct-glow {
     0%, 100% {
         box-shadow: 0 0 10px rgba(255, 215, 0, 0.5),
@@ -1062,7 +1057,6 @@ body {
     filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 15px rgba(100, 150, 255, 0.5));
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .rodez-game-panel {
         max-width: 90%;
@@ -1083,8 +1077,6 @@ body {
         right: 10px;
     }
 }
-
-/* 🌋 EFFETS SPÉCIAUX MONTAUBAN - Volcan Cartoon */
 
 @keyframes volcano-shake {
     0%, 100% { transform: translateX(0) rotate(0deg); }
@@ -1157,7 +1149,6 @@ body {
     margin: 0 auto;
 }
 
-/* Corps du volcan */
 .volcano-body {
     position: absolute;
     bottom: 0;
@@ -1170,7 +1161,6 @@ body {
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
-/* Cratère du volcan */
 .volcano-crater {
     position: absolute;
     bottom: 100px;
@@ -1184,7 +1174,6 @@ body {
                 0 0 20px rgba(255, 100, 0, 0.4);
 }
 
-/* Lave/effet intérieur */
 .volcano-lava {
     position: absolute;
     bottom: 105px;
@@ -1198,7 +1187,6 @@ body {
     opacity: 0;
 }
 
-/* Fumée */
 .volcano-smoke {
     position: absolute;
     bottom: 100px;
@@ -1208,7 +1196,6 @@ body {
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* Message d'erreur géologique */
 .geology-error-message {
     position: fixed;
     top: 50%;
@@ -1247,8 +1234,6 @@ body {
     color: #FFD700;
     margin-top: 15px;
 }
-
-/* 🎬 EASTER EGG RICK ROLL - Double-clic */
 
 @keyframes rick-roll-popup {
     0% {

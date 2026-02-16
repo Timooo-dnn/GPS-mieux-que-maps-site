@@ -15,7 +15,7 @@ try:
     os.chdir(ROOT_DIR)
     print(f"Dossier de travail défini sur : {ROOT_DIR}")
 except Exception as e:
-    print(f"⚠️ Impossible de changer le dossier de travail : {e}")
+    print(f"Impossible de changer le dossier de travail : {e}")
 
 try:
     from algorithms import calculer_itineraire
@@ -24,16 +24,13 @@ try:
     print(f"Modules chargés. Graphe contenant {len(maping)} villes.")
 
 except ImportError as e:
-    print(f"\n ⚠️ ERREUR CRITIQUE D'IMPORT : {e}")
+    print(f"\n ERREUR CRITIQUE D'IMPORT : {e}")
     def calculer_itineraire(d, a): return []
     def extraire_infos_itineraire(l): return {"villes": {}, "routes": []}
 
 
 
 def calculer_distance_reelle(chemin):
-    """
-    Calcule la distance réelle pour un chemin donné en km.
-    """
     if not chemin or len(chemin) < 2:
         return 0
     
@@ -48,15 +45,12 @@ def calculer_distance_reelle(chemin):
                 km = distance_pair[0]
                 distance_totale += km
     except (KeyError, IndexError, TypeError) as e:
-        print(f"⚠️ Erreur lors du calcul de distance : {e}")
+        print(f"Erreur lors du calcul de distance : {e}")
     
     return round(distance_totale, 2)
 
 
 def calculer_temps_reel(chemin):
-    """
-    Calcule le temps réel pour un chemin donné en minutes.
-    """
     if not chemin or len(chemin) < 2:
         return 0
     
@@ -68,10 +62,10 @@ def calculer_temps_reel(chemin):
             
             if ville_depart in maping and ville_arrivee in maping[ville_depart]:
                 distance_pair = maping[ville_depart][ville_arrivee]
-                temps = distance_pair[1]  # Index 1 contient le temps
+                temps = distance_pair[1]
                 temps_total += temps
     except (KeyError, IndexError, TypeError) as e:
-        print(f"⚠️ Erreur lors du calcul de temps : {e}")
+        print(f"Erreur lors du calcul de temps : {e}")
     
     return round(temps_total, 2)
 
@@ -84,7 +78,7 @@ try:
     with open(path_coords, 'r', encoding='utf-8') as f:
         DATA_VILLES = json.load(f)
 except FileNotFoundError:
-    print(f"⚠️ Fichier coords_villes.json introuvable.")
+    print(f"Fichier coords_villes.json introuvable.")
 
 def formatter_temps(minutes):
     try:
@@ -122,8 +116,8 @@ def api_calcul():
         try:
             resultats_algo = calculer_itineraire(depart, arrivee)
         except RecursionError:
-            print(f"⚠️ Récursion infinie détectée avec {depart} -> {arrivee}")
-            print(f"✓ Tentative en sens inverse : {arrivee} -> {depart}")
+            print(f"Récursion infinie détectée avec {depart} -> {arrivee}")
+            print(f"Tentative en sens inverse : {arrivee} -> {depart}")
             
             resultats_algo = calculer_itineraire(arrivee, depart)
             
@@ -143,7 +137,7 @@ def api_calcul():
             geo_infos = extraire_infos_itineraire(chemin)
             print(f"Géométrie récupérée : {len(geo_infos['villes'])} villes, {len(geo_infos['routes'])} routes")
         except Exception as e:
-            print(f"⚠️ Erreur lors de la récupération de la géométrie : {e}")
+            print(f"Erreur lors de la récupération de la géométrie : {e}")
             import traceback
             traceback.print_exc()
             geo_infos = {"villes": {}, "routes": []}
@@ -160,7 +154,7 @@ def api_calcul():
         })
 
     except Exception as e:
-        print(f"⚠️ Erreur API : {e}")
+        print(f"Erreur API : {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'erreur': str(e)}), 500

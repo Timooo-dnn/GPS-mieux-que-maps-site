@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPS Navigator - Calculateur d'Itinéraires</title>
     
-    <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🗺️</text></svg>">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
@@ -15,7 +14,6 @@
 <body>
 
 <div class="app-container">
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="logo">
@@ -26,7 +24,6 @@
         </div>
 
         <div class="form-section">
-            <!-- Ville de départ -->
             <div class="input-group">
                 <label for="depart_input">
                     <i class="fas fa-play-circle"></i> Ville de Départ
@@ -45,14 +42,12 @@
                 <div id="depart_suggestions" class="suggestions-dropdown"></div>
             </div>
 
-            <!-- Bouton d'inversion -->
             <div class="swap-btn-container">
                 <button id="btn-swap" title="Inverser les trajets" class="swap-btn">
                     <i class="fas fa-exchange-alt"></i>
                 </button>
             </div>
 
-            <!-- Ville d'arrivée -->
             <div class="input-group">
                 <label for="arrivee_input">
                     <i class="fas fa-flag-checkered"></i> Ville d'Arrivée
@@ -71,14 +66,12 @@
                 <div id="arrivee_suggestions" class="suggestions-dropdown"></div>
             </div>
 
-            <!-- Bouton de calcul -->
             <button id="btn-calcul" class="calculate-btn">
                 <i class="fas fa-route"></i>
                 <span>Calculer l'itinéraire</span>
             </button>
         </div>
 
-        <!-- Résultats -->
         <div id="resultats" class="results-section" style="display: none;">
             <div class="results-header">
                 <h3><i class="fas fa-chart-bar"></i> Résultats</h3>
@@ -110,32 +103,25 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="sidebar-footer">
             <p>🗺️ Calcul optimal d'itinéraires avec A*</p>
         </div>
     </div>
 
-    <!-- Map -->
     <div id="map" class="map-container"></div>
 </div>
 
-<!-- Loading overlay -->
 <div id="loading-overlay" class="loading-overlay" style="display: none;">
     <div class="spinner"></div>
     <p>Calcul en cours...</p>
 </div>
 
-<!-- Toast notification -->
 <div id="toast" class="toast"></div>
 
-<!-- 🎉 Bus Toulouse Easter Egg -->
 <div id="bus-easter-egg" class="bus-easter-egg"></div>
 
-<!-- Scripts -->
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
-<!-- Easter Eggs System -->
 <script src="{{ url_for('static', filename='js/easter-eggs/easter-eggs-manager.js') }}"></script>
 <script src="{{ url_for('static', filename='js/easter-eggs/toulouse.js') }}"></script>
 <script src="{{ url_for('static', filename='js/easter-eggs/rodez.js') }}"></script>
@@ -143,7 +129,6 @@
 <script src="{{ url_for('static', filename='js/easter-eggs/montauban.js') }}"></script>
 <script src="{{ url_for('static', filename='js/easter-eggs/double-click.js') }}"></script>
 
-<!-- Main App -->
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
 </body>
