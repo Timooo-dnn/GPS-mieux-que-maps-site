@@ -3,8 +3,6 @@ networkx #graphe (optionnel mais utile)
 matplotlib #visualisation
 black
 flake8
-json
-math
 numpy
 sqlite3
 pathlib
