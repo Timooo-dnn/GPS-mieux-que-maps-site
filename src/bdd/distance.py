@@ -118,6 +118,85 @@ def facteur_sinuosite(sinuosite, fclass):
     facteur = math.exp(-SIN_K * (sinuosite - 1))
     return max(SIN_MIN, min(SIN_MAX, facteur))
 
+def connecter_composants_isoles(G):
+    types_importants = [
+        "motorway",
+        "motorway_link",
+        "trunk",
+        "trunk_link",
+        "primary",
+        "primary_link",
+        "secondary",
+        "secondary_link",
+        "tertiary",
+        "tertiary_link",
+        "residential",
+        "living_street",
+        "unclassified",
+        "service"
+    ]
+    
+    composants = list(nx.weakly_connected_components(G))
+    
+    if not composants:
+        return G
+    
+    plus_grand = max(composants, key=len)
+    G_principal = G.subgraph(plus_grand).copy()
+    
+    noeuds_principaux = list(G_principal.nodes())
+    if not noeuds_principaux:
+        return G_principal
+    
+    arbre_principal = cKDTree(noeuds_principaux)
+    
+    nb_rattaches = 0
+    
+    for comp in composants:
+        if comp == plus_grand:
+            continue
+        
+        contient_important = False
+        sous_graphe = G.subgraph(comp)
+        for u, v, data in sous_graphe.edges(data=True):
+            if data.get("fclass") in types_importants:
+                contient_important = True
+                break
+        
+        if not contient_important:
+            continue
+        
+        meilleur_noeud_isole = None
+        meilleur_noeud_principal = None
+        meilleure_distance = float('inf')
+        
+        for noeud_isole in comp:
+            dist, idx = arbre_principal.query([noeud_isole[0], noeud_isole[1]], k=1)
+            if dist < meilleure_distance:
+                meilleure_distance = dist
+                meilleur_noeud_isole = noeud_isole
+                meilleur_noeud_principal = noeuds_principaux[idx]
+        
+        if meilleur_noeud_isole and meilleur_noeud_principal:
+            dist_virtuel = meilleure_distance
+            vitesse_virtuelle = 80 / 3.6
+            temps_virtuel = dist_virtuel / vitesse_virtuelle
+            
+            geom_virtuel = LineString([Point(meilleur_noeud_principal), Point(meilleur_noeud_isole)])
+            
+            G_principal.add_edge(meilleur_noeud_principal, meilleur_noeud_isole,
+                               weight=dist_virtuel, time=temps_virtuel,
+                               geometry=geom_virtuel, fclass="virtual_bridge", z_level=0,
+                               penalite_locale=1.0)
+            G_principal.add_edge(meilleur_noeud_isole, meilleur_noeud_principal,
+                               weight=dist_virtuel, time=temps_virtuel,
+                               geometry=LineString(list(geom_virtuel.coords)[::-1]), fclass="virtual_bridge", z_level=0,
+                               penalite_locale=1.0)
+            nb_rattaches += 1
+    
+    print(f"Nombre de composants isolés rattachés : {nb_rattaches}")
+    return G_principal
+
 def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de route en graph orienté avec distance et temps
     print("Préparation des arêtes")
     gdf_arretes = gdf_roads_projected.explode(index_parts=False).reset_index(drop=True)
@@ -166,10 +245,9 @@ def construction_graph_routes(gdf_roads_projected): #Transforme le fichier de ro
                    penalite_locale=row["penalite_locale"])
     
     if len(G) > 0:
-        print("Nettoyage des routes isolées...")
-        largest_cc = max(nx.weakly_connected_components(G), key=len)
-        G = G.subgraph(largest_cc).copy()
-        print(f"Graphe principal : {len(G.nodes)} nœuds.")
+        print("Connexion des composants isolés importants...")
+        G = connecter_composants_isoles(G)
+        print(f"Graphe final : {len(G.nodes)} nœuds.")
         
     return G
 
