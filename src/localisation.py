@@ -1,11 +1,8 @@
 import json
-import lien_file
+import os
 
-localisation_ville_test = {"Toulouse":[43.6044638, 1.4442433],
- "Blagnac": [43.6343476, 1.3986403],
- "Colomiers": [43.6112476, 1.3367443],
- "Tournefeuille": [0.5832062, 1.3160025],
- "Aussonne":[43.6343470, 1.3986400]}
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))  # src/
+PATH_LOCALISATION = os.path.join(CURRENT_DIR, "visualisation", "coords_villes.json")
 
-with open(lien_file.PATH_LOCALISATION,encoding="utf-8") as f:
+with open(PATH_LOCALISATION, encoding="utf-8") as f:
     localisation_ville = json.load(f)
