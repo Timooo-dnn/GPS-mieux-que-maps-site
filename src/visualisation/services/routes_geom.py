@@ -1,14 +1,14 @@
+from pathlib import Path
 import sqlite3
 import json
-from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parents[3]
-DB_FILE = BASE_DIR / "src" / "data" / "sqlite" / "routes.db"
+CURRENT_DIR = Path(__file__).parent  # src/visualisation/services
+DB_FILE = CURRENT_DIR.parent / "ma_base.db"  # remonte à src/visualisation
+print("DB_FILE =", DB_FILE)
 
 def extraire_infos_itineraire(liste_villes):
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
-
     print("DB_FILE =", DB_FILE)
 
     cur.execute("SELECT name FROM sqlite_master WHERE type='table'")

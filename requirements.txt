@@ -3,5 +3,8 @@ networkx #graphe (optionnel mais utile)
 matplotlib #visualisation
 black
 flake8
-flask
+numpy
+pathlib
+gunicorn
+pandas
 geopandas
