@@ -44,10 +44,47 @@ try:
     print(f"Modules chargés avec succès.")
 except ImportError as e:
     print(f"\n ERREUR CRITIQUE D'IMPORT : {e}")
-    # Petit hack pour éviter que l'app crash au démarrage si import rate
-    calculer_itineraire = lambda d, a: []
-    extraire_infos_itineraire = lambda l: {"villes": {}, "routes": []}
-    maping = {}
+    def calculer_itineraire(d, a): return []
+    def extraire_infos_itineraire(l): return {"villes": {}, "routes": []}
+
+def calculer_distance_reelle(chemin):
+    if not chemin or len(chemin) < 2:
+        return 0
+    
+    distance_totale = 0
+    try:
+        for i in range(len(chemin) - 1):
+            ville_depart = chemin[i]
+            ville_arrivee = chemin[i + 1]
+            
+            if ville_depart in maping and ville_arrivee in maping[ville_depart]:
+                distance_pair = maping[ville_depart][ville_arrivee]
+                km = distance_pair[0]
+                distance_totale += km
+    except (KeyError, IndexError, TypeError) as e:
+        print(f"Erreur lors du calcul de distance : {e}")
+    
+    return round(distance_totale, 2)
+
+
+def calculer_temps_reel(chemin):
+    if not chemin or len(chemin) < 2:
+        return 0
+    
+    temps_total = 0
+    try:
+        for i in range(len(chemin) - 1):
+            ville_depart = chemin[i]
+            ville_arrivee = chemin[i + 1]
+            
+            if ville_depart in maping and ville_arrivee in maping[ville_depart]:
+                distance_pair = maping[ville_depart][ville_arrivee]
+                temps = distance_pair[1]
+                temps_total += temps
+    except (KeyError, IndexError, TypeError) as e:
+        print(f"Erreur lors du calcul de temps : {e}")
+    
+    return round(temps_total, 2)
 
 # --- CHARGEMENT DU JSON DES VILLES ---
 app = Flask(__name__)
