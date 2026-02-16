@@ -12,3 +12,11 @@ __pycache__/
 /src/lien_file.py
 *.db
 *.db-journal
+src/visualisation/*.json
+ios/
+node_modules/
+android/
+capacitor.config.json
+package-lock.json
+package.json
+www/
