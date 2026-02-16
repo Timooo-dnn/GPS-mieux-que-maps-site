@@ -6,9 +6,8 @@ import gdown
 from flask import Flask, render_template, request, jsonify
 
 # --- GESTION DES CHEMINS ---
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) # src/visualisation
-SRC_DIR = os.path.dirname(CURRENT_DIR)                  # src
-ROOT_DIR = os.path.dirname(SRC_DIR)                     # /
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) 
+SRC_DIR = os.path.dirname(CURRENT_DIR)
 
 # On ajoute SRC au path pour que "from algorithms import..." fonctionne
 if SRC_DIR not in sys.path:
@@ -41,11 +40,12 @@ try:
     from algorithms import calculer_itineraire
     from map import maping
     from services.routes_geom import extraire_infos_itineraire
-    print(f"Modules chargés avec succès.")
+    print(f"Modules chargés avec succès. Graphe contenant {len(maping)} entrées.")
 except ImportError as e:
     print(f"\n ERREUR CRITIQUE D'IMPORT : {e}")
     def calculer_itineraire(d, a): return []
     def extraire_infos_itineraire(l): return {"villes": {}, "routes": []}
+    maping = {}
 
 def calculer_distance_reelle(chemin):
     if not chemin or len(chemin) < 2:
@@ -65,7 +65,6 @@ def calculer_distance_reelle(chemin):
         print(f"Erreur lors du calcul de distance : {e}")
     
     return round(distance_totale, 2)
-
 
 def calculer_temps_reel(chemin):
     if not chemin or len(chemin) < 2:
