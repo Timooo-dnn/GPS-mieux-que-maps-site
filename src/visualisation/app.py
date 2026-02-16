@@ -5,13 +5,23 @@ import math
 import gdown
 from flask import Flask, render_template, request, jsonify
 
-# --- GESTION DES CHEMINS ---
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) 
+# --- GESTION DES CHEMINS (CRUCIAL) ---
+# 1. On récupère le chemin du dossier où se trouve app.py (.../src/visualisation)
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 2. On récupère le dossier parent (.../src)
 SRC_DIR = os.path.dirname(CURRENT_DIR)
 
-# On ajoute SRC au path pour que "from algorithms import..." fonctionne
+# 3. On ajoute CURRENT_DIR au système pour pouvoir faire "import services..."
+# (Car le dossier services est à l'intérieur de visualisation)
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
+
+# 4. On ajoute SRC_DIR au système pour pouvoir faire "import algorithms" et "import map"
+# (Car ces fichiers sont dans le dossier parent src)
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
+
 
 # --- TELECHARGEMENT DES DONNÉES ---
 files_to_download = {
@@ -24,29 +34,42 @@ files_to_download = {
 def download_data():
     print("Verification des fichiers de données...")
     for filename, drive_id in files_to_download.items():
-        # On force le stockage dans src/visualisation/
+        # On stocke les fichiers dans le même dossier que app.py (src/visualisation)
         destination = os.path.join(CURRENT_DIR, filename)
         
         if not os.path.exists(destination):
             print(f"Téléchargement de {filename}...")
-            gdown.download(id=drive_id, output=destination, quiet=False)
+            try:
+                gdown.download(id=drive_id, output=destination, quiet=False)
+            except Exception as e:
+                print(f"Erreur de téléchargement pour {filename}: {e}")
         else:
             print(f"{filename} est déjà présent.")
 
 download_data()
 
 # --- IMPORTS DE VOS MODULES ---
+# Maintenant que le path est configuré, les imports devraient fonctionner
 try:
+    # Import depuis src/
     from algorithms import calculer_itineraire
     from map import maping
+    
+    # Import depuis src/visualisation/
     from services.routes_geom import extraire_infos_itineraire
+    
     print(f"Modules chargés avec succès. Graphe contenant {len(maping)} entrées.")
+
 except ImportError as e:
     print(f"\n ERREUR CRITIQUE D'IMPORT : {e}")
+    print(f"Sys Path actuel : {sys.path}") # Pour le debug si ça plante encore
+    # Fonctions bouchons pour éviter que l'app plante au démarrage
     def calculer_itineraire(d, a): return []
     def extraire_infos_itineraire(l): return {"villes": {}, "routes": []}
     maping = {}
 
+
+# --- FONCTIONS UTILITAIRES ---
 def calculer_distance_reelle(chemin):
     if not chemin or len(chemin) < 2:
         return 0
@@ -85,18 +108,6 @@ def calculer_temps_reel(chemin):
     
     return round(temps_total, 2)
 
-# --- CHARGEMENT DU JSON DES VILLES ---
-app = Flask(__name__)
-
-path_coords = os.path.join(os.path.dirname(__file__), "coords_villes.json")
-DATA_VILLES = {}
-
-if os.path.exists(path_coords):
-    with open(path_coords, 'r', encoding='utf-8') as f:
-        DATA_VILLES = json.load(f)
-else:
-    print(f"ATTENTION : Fichier introuvable à {path_coords}")
-
 def formatter_temps(minutes):
     try:
         minutes = float(minutes)
@@ -109,6 +120,25 @@ def formatter_temps(minutes):
     except (ValueError, TypeError):
         return "0 min"
 
+
+# --- CONFIGURATION FLASK ET CHARGEMENT DONNEES ---
+app = Flask(__name__)
+
+# Chargement coords_villes.json (situé dans src/visualisation/)
+path_coords = os.path.join(CURRENT_DIR, "coords_villes.json")
+DATA_VILLES = {}
+
+if os.path.exists(path_coords):
+    try:
+        with open(path_coords, 'r', encoding='utf-8') as f:
+            DATA_VILLES = json.load(f)
+    except json.JSONDecodeError:
+        print("Erreur de lecture du JSON coords_villes.")
+else:
+    print(f"ATTENTION : Fichier introuvable à {path_coords}")
+
+
+# --- ROUTES FLASK ---
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -117,29 +147,39 @@ def index():
 def api_recherche():
     nom = request.json.get('nom', '').strip().lower()
     res = []
+    # Optimisation : éviter de parcourir tout si nom vide
+    if not nom: 
+        return jsonify([])
+
     for kid, v in DATA_VILLES.items():
         v_nom = v.get('nom_affichage', kid.split('_')[0])
-        if v_nom.lower() == nom:
-            res.append({'id': kid, 'nom': v_nom, 'lat': v['lat'], 'lon': v['lon']})
-    return jsonify(res)
+        if v_nom.lower().startswith(nom): # 'startswith' est souvent mieux pour l'autocomplétion que '=='
+             res.append({'id': kid, 'nom': v_nom, 'lat': v['lat'], 'lon': v['lon']})
+        elif v_nom.lower() == nom:
+             res.append({'id': kid, 'nom': v_nom, 'lat': v['lat'], 'lon': v['lon']})
+             
+    # On limite les résultats pour ne pas surcharger le front
+    return jsonify(res[:10])
 
 @app.route('/api/calculer', methods=['POST'])
 def api_calcul():
     data = request.json
     try:
-        depart = data['depart']
-        arrivee = data['arrivee']
+        depart = data.get('depart')
+        arrivee = data.get('arrivee')
         
+        if not depart or not arrivee:
+            return jsonify({'erreur': 'Villes de départ ou d\'arrivée manquantes.'}), 400
+
         try:
             resultats_algo = calculer_itineraire(depart, arrivee)
         except RecursionError:
             print(f"Récursion infinie détectée avec {depart} -> {arrivee}")
             print(f"Tentative en sens inverse : {arrivee} -> {depart}")
-            
             resultats_algo = calculer_itineraire(arrivee, depart)
-            
             for result in resultats_algo:
-                result['Chemin'] = result['Chemin'][::-1]
+                if 'Chemin' in result:
+                    result['Chemin'] = result['Chemin'][::-1]
         
         if not resultats_algo:
             return jsonify({'erreur': 'Aucun chemin trouvé.'}), 404
@@ -150,14 +190,15 @@ def api_calcul():
         dist = best.get('distance') or best.get('Distance_reelle') or 0
         tps_raw = best.get('temps') or best.get('Temps_reel') or 0
         
+        # Récupération de la géométrie via le module services
+        geo_infos = {"villes": {}, "routes": []}
         try:
             geo_infos = extraire_infos_itineraire(chemin)
-            print(f"Géométrie récupérée : {len(geo_infos['villes'])} villes, {len(geo_infos['routes'])} routes")
+            print(f"Géométrie récupérée : {len(geo_infos.get('villes', {}))} villes")
         except Exception as e:
             print(f"Erreur lors de la récupération de la géométrie : {e}")
             import traceback
             traceback.print_exc()
-            geo_infos = {"villes": {}, "routes": []}
         
         return jsonify({
             'itineraire': {
@@ -171,7 +212,7 @@ def api_calcul():
         })
 
     except Exception as e:
-        print(f"Erreur API : {e}")
+        print(f"Erreur API Globale : {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'erreur': str(e)}), 500
