@@ -25,10 +25,10 @@ if SRC_DIR not in sys.path:
 
 # --- TELECHARGEMENT DES DONNÉES ---
 files_to_download = {
-    "ma_base.db": "1ZE2ECaY0n_VQ6ACpqtOoOFZCRQRp0MsC",
-    "dico_final.json": "1AJp7sN1q8Wnms-yUoZCChZ1jhdvNcCcv",
-    "routes_ville_adj.json": "1sl727G5IH2atDdTveCyr4pz7Eb8rPRpW",
-    "coords_villes.json": "1or2XZVj59nWH1B95433uUFIFjOU9cjpW"
+    "ma_base.db": "1vhZWxPNdpejZ3kzvBt9sDIwmax9-FuR3",
+    "dico_final.json": "1WMe7a3oy77HD1WbiLFikl0OqAb94VToU",
+    "routes_ville_adj.json": "1tjj7xArWe-ChqcQJ--t52k9SDsQYpR8O",
+    "coords_villes.json": "1J3L2dt-JyBYtaTpVbFTfY501LWtSxiwp"
 }
 
 def download_data():
