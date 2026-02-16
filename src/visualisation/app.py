@@ -2,83 +2,64 @@ import sys
 import os
 import json
 import math
+import gdown
 from flask import Flask, render_template, request, jsonify
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-SRC_DIR = os.path.dirname(CURRENT_DIR)
-ROOT_DIR = os.path.dirname(SRC_DIR)
+# --- GESTION DES CHEMINS ---
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) # src/visualisation
+SRC_DIR = os.path.dirname(CURRENT_DIR)                  # src
+ROOT_DIR = os.path.dirname(SRC_DIR)                     # /
 
+# On ajoute SRC au path pour que "from algorithms import..." fonctionne
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
 
-try:
-    os.chdir(ROOT_DIR)
-    print(f"Dossier de travail défini sur : {ROOT_DIR}")
-except Exception as e:
-    print(f"Impossible de changer le dossier de travail : {e}")
+# --- TELECHARGEMENT DES DONNÉES ---
+files_to_download = {
+    "ma_base.db": "1ZE2ECaY0n_VQ6ACpqtOoOFZCRQRp0MsC",
+    "dico_final.json": "1AJp7sN1q8Wnms-yUoZCChZ1jhdvNcCcv",
+    "routes_ville_adj.json": "1sl727G5IH2atDdTveCyr4pz7Eb8rPRpW",
+    "coords_villes.json": "1or2XZVj59nWH1B95433uUFIFjOU9cjpW"
+}
 
+def download_data():
+    print("Verification des fichiers de données...")
+    for filename, drive_id in files_to_download.items():
+        # On force le stockage dans src/visualisation/
+        destination = os.path.join(CURRENT_DIR, filename)
+        
+        if not os.path.exists(destination):
+            print(f"Téléchargement de {filename}...")
+            gdown.download(id=drive_id, output=destination, quiet=False)
+        else:
+            print(f"{filename} est déjà présent.")
+
+download_data()
+
+# --- IMPORTS DE VOS MODULES ---
 try:
     from algorithms import calculer_itineraire
     from map import maping
     from services.routes_geom import extraire_infos_itineraire
-    print(f"Modules chargés. Graphe contenant {len(maping)} villes.")
-
+    print(f"Modules chargés avec succès.")
 except ImportError as e:
     print(f"\n ERREUR CRITIQUE D'IMPORT : {e}")
-    def calculer_itineraire(d, a): return []
-    def extraire_infos_itineraire(l): return {"villes": {}, "routes": []}
+    # Petit hack pour éviter que l'app crash au démarrage si import rate
+    calculer_itineraire = lambda d, a: []
+    extraire_infos_itineraire = lambda l: {"villes": {}, "routes": []}
+    maping = {}
 
-
-
-def calculer_distance_reelle(chemin):
-    if not chemin or len(chemin) < 2:
-        return 0
-    
-    distance_totale = 0
-    try:
-        for i in range(len(chemin) - 1):
-            ville_depart = chemin[i]
-            ville_arrivee = chemin[i + 1]
-            
-            if ville_depart in maping and ville_arrivee in maping[ville_depart]:
-                distance_pair = maping[ville_depart][ville_arrivee]
-                km = distance_pair[0]
-                distance_totale += km
-    except (KeyError, IndexError, TypeError) as e:
-        print(f"Erreur lors du calcul de distance : {e}")
-    
-    return round(distance_totale, 2)
-
-
-def calculer_temps_reel(chemin):
-    if not chemin or len(chemin) < 2:
-        return 0
-    
-    temps_total = 0
-    try:
-        for i in range(len(chemin) - 1):
-            ville_depart = chemin[i]
-            ville_arrivee = chemin[i + 1]
-            
-            if ville_depart in maping and ville_arrivee in maping[ville_depart]:
-                distance_pair = maping[ville_depart][ville_arrivee]
-                temps = distance_pair[1]
-                temps_total += temps
-    except (KeyError, IndexError, TypeError) as e:
-        print(f"Erreur lors du calcul de temps : {e}")
-    
-    return round(temps_total, 2)
-
+# --- CHARGEMENT DU JSON DES VILLES ---
 app = Flask(__name__)
 
+path_coords = os.path.join(os.path.dirname(__file__), "coords_villes.json")
 DATA_VILLES = {}
-path_coords = os.path.join(ROOT_DIR, "src", "data", "coords_villes.json")
 
-try:
+if os.path.exists(path_coords):
     with open(path_coords, 'r', encoding='utf-8') as f:
         DATA_VILLES = json.load(f)
-except FileNotFoundError:
-    print(f"Fichier coords_villes.json introuvable.")
+else:
+    print(f"ATTENTION : Fichier introuvable à {path_coords}")
 
 def formatter_temps(minutes):
     try:
