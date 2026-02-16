@@ -28,8 +28,6 @@ except ImportError as e:
     def calculer_itineraire(d, a): return []
     def extraire_infos_itineraire(l): return {"villes": {}, "routes": []}
 
-
-
 def calculer_distance_reelle(chemin):
     if not chemin or len(chemin) < 2:
         return 0
