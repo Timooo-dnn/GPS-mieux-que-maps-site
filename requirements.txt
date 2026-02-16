@@ -4,7 +4,6 @@ matplotlib #visualisation
 black
 flake8
 numpy
-sqlite3
 pathlib
 gunicorn
 pandas
